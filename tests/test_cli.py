@@ -226,7 +226,7 @@ class RotationTest(CliTestCase):
         for path in self.logs():
             os.utime(path, (4_000_000_000, 4_000_000_000))
         result = self.sq("sh", "-c", "echo mine", env={**self.env, "SQUEEZE_KEEP_LOGS": "1"})
-        printed = result.stdout.decode().split("full log: ")[1].strip()
+        printed = result.stdout.decode().split("full log: ")[1].split("\n")[0]
         self.assertTrue((self.dir / printed).exists())
 
     def test_other_files_are_left_alone(self):

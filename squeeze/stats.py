@@ -42,9 +42,47 @@ def history_path():
     return Path.home() / ".squeeze" / "history.jsonl"
 
 
-def record(repo, command, tool, exit_code, seconds, before, after, raw):
-    """Append one run to the history. Only names and numbers: never arguments or output, which can hold secrets."""
-    entry = {
+def format_compact(n):
+    """Like: 1.24M, 182k, 4.8k, 950."""
+    if abs(n) >= 1_000_000:
+        return f"{n / 1_000_000:.2f}M"
+    if abs(n) >= 10_000:
+        return f"{n / 1000:.0f}k"
+    return f"{n / 1000:.1f}k" if abs(n) >= 1000 else str(n)
+
+
+def saved(entry):
+    """Tokens this run saved. Short commands can go negative: the header costs more than it removed."""
+    return 0 if entry["raw"] else entry["tokens_before"] - entry["tokens_after"]
+
+
+def entry_date(entry):
+    # The offset recorded with the run, so moving timezones doesn't rewrite past days.
+    return datetime.fromisoformat(entry["ts"]).date()
+
+
+def load_history():
+    """Every readable run, oldest first, each with its "date". A damaged line is skipped, not fatal."""
+    try:
+        text = history_path().read_text(encoding="utf-8", errors="replace")
+    except FileNotFoundError:
+        return []
+    entries = []
+    for line in text.splitlines():
+        try:
+            entry = json.loads(line)
+            if entry["v"] == HISTORY_VERSION:
+                saved(entry)
+                entry["date"] = entry_date(entry)
+                entries.append(entry)
+        except (ValueError, KeyError, TypeError):
+            pass
+    return entries
+
+
+def new_entry(repo, command, tool, exit_code, seconds, before, after, raw):
+    """One run, for the history. Only names and numbers: never arguments or output, which can hold secrets."""
+    return {
         "v": HISTORY_VERSION,
         # Local time with its offset, so a day and a streak mean what they meant when the run happened.
         "ts": datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -59,6 +97,9 @@ def record(repo, command, tool, exit_code, seconds, before, after, raw):
         "tokens_after": estimate_tokens(after[1]),
         "raw": raw,
     }
+
+
+def append(entry):
     path = history_path()
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     # One write in append mode, so parallel runs can't interleave inside a line.
