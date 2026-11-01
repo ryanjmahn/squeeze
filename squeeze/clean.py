@@ -39,3 +39,14 @@ def collapse_runs(lines):
 
 def render_run(line, count):
     return f"(× {count}) {line}" if count > 1 and line.strip() else line
+
+
+def trim(line, limit=300):
+    return line if len(line) <= limit else f"{line[:limit]}…"
+
+
+def cap_error_lines(lines, limit=15):
+    if len(lines) <= limit:
+        return lines
+    # The end of a chained exception or diff is what actually surfaced.
+    return [*lines[: limit - 2], f"    … {len(lines) - limit} more lines in the log …", *lines[-2:]]

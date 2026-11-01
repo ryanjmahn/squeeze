@@ -5,9 +5,10 @@ squeeze(output, exit_code) -> str, then list it in SQUEEZERS. `command` is the
 argv list; `output` has already been through clean().
 """
 from ..clean import clean
-from . import generic, pytest
+from . import generic, jest, npm, pip, pytest, tsc
 
-SQUEEZERS = [pytest]
+# Strictest matchers first: `npm install jest` is an install, whatever package it names.
+SQUEEZERS = [npm, pip, pytest, tsc, jest]
 
 
 def squeeze(command, raw, exit_code):

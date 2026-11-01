@@ -1,0 +1,11 @@
+
+> x@1.0.0 postinstall
+> echo about to break && node -e "console.error('boom in postinstall'); process.exit(3)"
+
+about to break
+boom in postinstall
+npm error code 3
+npm error path /tmp/***/scratchpad/js/npm3
+npm error command failed
+npm error command sh -c echo about to break && node -e "console.error('boom in postinstall'); process.exit(3)"
+npm error A complete log of this run can be found in: /home/user/.npm/_logs/2026-11-01T11_04_51_141Z-debug-0.log

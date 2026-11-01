@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /project/vt3
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: leaked rejection
+ ❯ src/unhandled.test.js:2:61
+      1| import { test } from "vitest";
+      2| test("passes but leaks a rejection", () => { Promise.reject(new Error(…
+       |                                                             ^
+      3|
+ ❯ ../tools/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:1632:35
+ ❯ ../tools/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:26
+ ❯ ../tools/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:3338:20
+ ❯ runWithCancel ../tools/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:3333:10
+ ❯ ../tools/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:3318:20
+ ❯ runWithTimeout ../tools/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:3276:10
+ ❯ ../tools/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:3904:64
+
+This error originated in "src/unhandled.test.js" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+     Errors  1 error
+   Start at  20:07:12
+   Duration  64ms (transform 50%, import 30%, worker 11%, tests 8%, environment 1%)
+

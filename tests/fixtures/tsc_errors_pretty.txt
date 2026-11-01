@@ -1,0 +1,53 @@
+[96msrc/a.ts[0m:[93m1[0m:[93m14[0m - [91merror[0m[90m TS2322: [0mType 'string' is not assignable to type 'number'.
+
+[7m1[0m export const n: number = "text";
+[7m [0m [91m             ~[0m
+
+[96msrc/a.ts[0m:[93m2[0m:[93m14[0m - [91merror[0m[90m TS2322: [0mType 'string' is not assignable to type 'number'.
+
+[7m2[0m export const m: number = "text";
+[7m [0m [91m             ~[0m
+
+[96msrc/a.ts[0m:[93m3[0m:[93m41[0m - [91merror[0m[90m TS2339: [0mProperty 'nope' does not exist on type 'string'.
+
+[7m3[0m export function f(x: string) { return x.nope; }
+[7m [0m [91m                                        ~~~~[0m
+
+[96msrc/a.ts[0m:[93m4[0m:[93m3[0m - [91merror[0m[90m TS2345: [0mArgument of type 'number' is not assignable to parameter of type 'string'.
+
+[7m4[0m f(1);
+[7m [0m [91m  ~[0m
+
+[96msrc/a.ts[0m:[93m5[0m:[93m1[0m - [91merror[0m[90m TS2304: [0mCannot find name 'missing'.
+
+[7m5[0m missing();
+[7m [0m [91m~~~~~~~[0m
+
+[96msrc/b.ts[0m:[93m2[0m:[93m59[0m - [91merror[0m[90m TS2322: [0mType 'string' is not assignable to type 'number'.
+
+[7m2[0m const big: Deep = { a: { b: { c: { d: { e: { f: { g: "x", h: "not a number", i: true, j: [], k: {} } } } } } } };
+[7m [0m [91m                                                          ~[0m
+
+  [96msrc/b.ts[0m:[93m1[0m:[93m56[0m - The expected type comes from property 'h' which is declared here on type '{ g: string; h: number; i: boolean; j: string[]; k: Record<string, number>; }'
+    [7m1[0m type Deep = { a: { b: { c: { d: { e: { f: { g: string; h: number; i: boolean; j: string[]; k: Record<string, number> } } } } } } };
+    [7m [0m [96m                                                       ~[0m
+
+[96msrc/b.ts[0m:[93m3[0m:[93m7[0m - [91merror[0m[90m TS2322: [0mType '(x: number) => number' is not assignable to type '(x: Deep) => Deep'.
+  Types of parameters 'x' and 'x' are incompatible.
+    Type 'Deep' is not assignable to type 'number'.
+
+[7m3[0m const fn: (x: Deep) => Deep = (x: number) => x;
+[7m [0m [91m      ~~[0m
+
+[96msrc/b.ts[0m:[93m4[0m:[93m25[0m - [91merror[0m[90m TS2307: [0mCannot find module './does-not-exist' or its corresponding type declarations.
+
+[7m4[0m import { nothing } from "./does-not-exist";
+[7m [0m [91m                        ~~~~~~~~~~~~~~~~~~[0m
+
+
+Found 8 errors in 2 files.
+
+Errors  Files
+     5  src/a.ts[90m:1[0m
+     3  src/b.ts[90m:2[0m
+

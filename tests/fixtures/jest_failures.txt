@@ -1,0 +1,100 @@
+FAIL src/broken.test.js
+  ● Test suite failed to run
+
+    Cannot find module './does-not-exist' from 'src/broken.test.js'
+
+    > 1 | const x = require("./does-not-exist");
+        |           ^
+      2 | test("never runs", () => {});
+      3 |
+
+      at Resolver._throwModNotFoundError (../tools/node_modules/jest-resolve/build/index.js:1031:11)
+      at Object.require (src/broken.test.js:1:11)
+
+FAIL src/fail.test.js
+  ● Console
+
+    console.log
+      debug: inside failing test
+
+      at Object.log (src/fail.test.js:3:40)
+
+  ● math › adds numbers
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 3
+    Received: -1
+
+      1 | const { add, explode } = require("./math");
+      2 | describe("math", () => {
+    > 3 |   test("adds numbers", () => { console.log("debug: inside failing test"); expect(add(1, 2)).toBe(3); });
+        |                                                                                             ^
+      4 |   test("deep equal", () => { expect({ a: 1, b: [1, 2, 3], c: "x" }).toEqual({ a: 2, b: [1, 2, 4], c: "x" }); });
+      5 |   test("throws", () => { explode(); });
+      6 |   test.skip("skipped one", () => {});
+
+      at Object.toBe (src/fail.test.js:3:93)
+
+  ● math › deep equal
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 2
+    + Received  + 2
+
+      Object {
+    -   "a": 2,
+    +   "a": 1,
+        "b": Array [
+          1,
+          2,
+    -     4,
+    +     3,
+        ],
+        "c": "x",
+      }
+
+      2 | describe("math", () => {
+      3 |   test("adds numbers", () => { console.log("debug: inside failing test"); expect(add(1, 2)).toBe(3); });
+    > 4 |   test("deep equal", () => { expect({ a: 1, b: [1, 2, 3], c: "x" }).toEqual({ a: 2, b: [1, 2, 4], c: "x" }); });
+        |                                                                     ^
+      5 |   test("throws", () => { explode(); });
+      6 |   test.skip("skipped one", () => {});
+      7 | });
+
+      at Object.toEqual (src/fail.test.js:4:69)
+
+  ● math › throws
+
+    TypeError: cannot read widget
+
+      1 | function add(a, b) { return a - b; }
+    > 2 | function explode() { throw new TypeError("cannot read widget"); }
+        |                            ^
+      3 | module.exports = { add, explode };
+      4 |
+
+      at explode (src/math.js:2:28)
+      at Object.explode (src/fail.test.js:5:26)
+
+  ● top level failure
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "z"
+    Received string:    "hello"
+
+      6 |   test.skip("skipped one", () => {});
+      7 | });
+    > 8 | test("top level failure", () => { expect("hello").toContain("z"); });
+        |                                                   ^
+      9 |
+
+      at Object.toContain (src/fail.test.js:8:51)
+
+Test Suites: 2 failed, 1 passed, 3 total
+Tests:       4 failed, 1 skipped, 30 passed, 35 total
+Snapshots:   0 total
+Time:        0.318 s
+Ran all test suites.

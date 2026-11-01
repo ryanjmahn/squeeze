@@ -1,0 +1,14 @@
+yarn add v1.22.22
+[1/4] Resolving packages...
+error Error: https://registry.yarnpkg.com/this-package-does-not-exist-sq-98765: Not found
+    at params.callback [as _callback] (/project/tools/node_modules/yarn/lib/cli.js:66680:18)
+    at self.callback (/project/tools/node_modules/yarn/lib/cli.js:141410:22)
+    at Request.emit (node:events:514:20)
+    at Request.<anonymous> (/project/tools/node_modules/yarn/lib/cli.js:142382:10)
+    at Request.emit (node:events:514:20)
+    at IncomingMessage.<anonymous> (/project/tools/node_modules/yarn/lib/cli.js:142304:12)
+    at IncomingMessage.wrapper (node:events:639:12)
+    at IncomingMessage.emit (node:events:526:24)
+    at endReadableNT (node:internal/streams/readable:1772:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command.

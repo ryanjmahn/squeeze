@@ -1,0 +1,14 @@
+[WARN] deprecated request@2.88.2
+[WARN] 2 deprecated subdependencies found: har-validator@5.1.5, uuid@3.4.0
+Packages are cloned from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/user/Library/pnpm/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Packages: +48
+++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 48, reused 0, downloaded 49, added 48, done
+
+dependencies:
++ lodash 4.18.1
++ request 2.88.2
+
+Done in 557ms using pnpm v12.16.1

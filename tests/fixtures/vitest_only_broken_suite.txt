@@ -1,0 +1,23 @@
+
+ RUN  v5.0.5 /project/vt
+
+ ❯ src/broken.test.js (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/broken.test.js [ src/broken.test.js ]
+Error: Cannot find module './does-not-exist.js' imported from /project/vt/src/broken.test.js
+ ❯ src/broken.test.js:1:1
+      1| import x from "./does-not-exist.js";
+       | ^
+      2| import { test } from "vitest";
+      3| test("never runs", () => {});
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  20:07:11
+   Duration  67ms (worker 97%, environment 3%)
+

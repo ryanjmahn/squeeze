@@ -1,0 +1,9 @@
+
+ RUN  v5.0.5 /project/vt
+
+
+ Test Files  1 passed (1)
+      Tests  30 passed (30)
+   Start at  20:05:03
+   Duration  63ms (import 39%, tests 30%, transform 15%, worker 15%, environment 1%)
+

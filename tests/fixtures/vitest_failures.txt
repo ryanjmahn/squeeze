@@ -1,0 +1,108 @@
+
+ RUN  v5.0.5 /project/vt
+
+ ❯ src/broken.test.js (0 test)
+stdout | src/fail.test.js > math > adds numbers
+debug: inside failing test
+
+ ❯ src/fail.test.js (5 tests | 4 failed | 1 skipped) 6ms
+   ❯ math (4)
+     × adds numbers 4ms
+     × deep equal 1ms
+     × throws 0ms
+   × top level failure 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/broken.test.js [ src/broken.test.js ]
+Error: Cannot find module './does-not-exist.js' imported from /project/vt/src/broken.test.js
+ ❯ src/broken.test.js:1:1
+      1| import x from "./does-not-exist.js";
+       | ^
+      2| import { test } from "vitest";
+      3| test("never runs", () => {});
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fail.test.js > math > adds numbers
+AssertionError: expected -1 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ -1
+
+ ❯ src/fail.test.js:4:93
+      2| import { add, explode } from "./math.js";
+      3| describe("math", () => {
+      4|   test("adds numbers", () => { console.log("debug: inside failing test…
+       |                                                                                             ^
+      5|   test("deep equal", () => { expect({ a: 1, b: [1, 2, 3], c: "x" }).to…
+      6|   test("throws", () => { explode(); });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/fail.test.js > math > deep equal
+AssertionError: expected { a: 1, b: [ 1, 2, 3 ], c: 'x' } to deeply equal { a: 2, b: [ 1, 2, 4 ], c: 'x' }
+
+- Expected
++ Received
+
+  {
+-   "a": 2,
++   "a": 1,
+    "b": [
+      1,
+      2,
+-     4,
++     3,
+    ],
+    "c": "x",
+  }
+
+ ❯ src/fail.test.js:5:69
+      3| describe("math", () => {
+      4|   test("adds numbers", () => { console.log("debug: inside failing test…
+      5|   test("deep equal", () => { expect({ a: 1, b: [1, 2, 3], c: "x" }).to…
+       |                                                                     ^
+      6|   test("throws", () => { explode(); });
+      7|   test.skip("skipped one", () => {});
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/fail.test.js > math > throws
+TypeError: cannot read widget
+ ❯ explode src/math.js:2:35
+      1| export function add(a, b) { return a - b; }
+      2| export function explode() { throw new TypeError("cannot read widget");…
+       |                                   ^
+      3|
+ ❯ src/fail.test.js:6:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/fail.test.js > top level failure
+AssertionError: expected 'hello' to contain 'z'
+
+Expected: "z"
+Received: "hello"
+
+ ❯ src/fail.test.js:9:51
+      7|   test.skip("skipped one", () => {});
+      8| });
+      9| test("top level failure", () => { expect("hello").toContain("z"); });
+       |                                                   ^
+     10|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  4 failed | 30 passed | 1 skipped (35)
+   Start at  20:05:03
+   Duration  100ms (transform 48%, tests 21%, import 19%, worker 12%)
+

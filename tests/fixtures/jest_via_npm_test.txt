@@ -1,0 +1,40 @@
+
+> m@1.0.0 test
+> /tmp/***/scratchpad/js/tools/node_modules/.bin/jest
+
+FAIL src/s25.test.js
+  ● the one failure
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+    > 1 | test("the one failure", () => { expect(1).toBe(2); });
+        |                                           ^
+      2 |
+
+      at Object.toBe (src/s25.test.js:1:43)
+
+
+Summary of all failing tests
+FAIL src/s25.test.js
+  ● the one failure
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+    > 1 | test("the one failure", () => { expect(1).toBe(2); });
+        |                                           ^
+      2 |
+
+      at Object.toBe (src/s25.test.js:1:43)
+
+
+Test Suites: 1 failed, 24 passed, 25 total
+Tests:       1 failed, 24 passed, 25 total
+Snapshots:   0 total
+Time:        0.304 s, estimated 1 s
+Ran all test suites.

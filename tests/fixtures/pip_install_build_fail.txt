@@ -1,0 +1,19 @@
+Processing /project/badpkg
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'error'
+  error: subprocess-exited-with-error
+  
+  × Getting requirements to build wheel did not run successfully.
+  │ exit code: 1
+  ╰─> [2 lines of output]
+      compiling native extension
+      error: could not find libfoo headers
+      [end of output]
+  
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+
+[notice] A new release of pip is available: 25.3 -> 26.2.2
+[notice] To update, run: /venv/bin/python3.14 -m pip install --upgrade pip
+ERROR: Failed to build 'file:///project/badpkg' when getting requirements to build wheel

@@ -1,0 +1,18 @@
+Processing /project/needsold
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: needsold
+  Building wheel for needsold (pyproject.toml): started
+  Building wheel for needsold (pyproject.toml): finished with status 'done'
+  Created wheel for needsold: filename=needsold-1.0-py3-none-any.whl size=957 sha256=e16aac053a1ccd945295a4ac8010a9376336a6b34a1eab61c7be44d2d2303d9a
+  Stored in directory: /private/var/folders/rv/m1_sfcs54591tdxd5yxmd4q40000gn/T/pip-ephem-wheel-cache-srsopsp5/wheels/bf/86/fe/52ca7753bc818fb221e828cd22ad26cacf4737ded1e882b963
+Successfully built needsold
+Installing collected packages: needsold
+Successfully installed needsold-1.0
+
+[notice] A new release of pip is available: 25.3 -> 26.2.2
+[notice] To update, run: /venv/bin/python3.14 -m pip install --upgrade pip

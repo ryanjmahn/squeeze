@@ -1,0 +1,8 @@
+Error: ERR_PNPM_PACKAGE_MANAGER_ADD_RESOLVE_LATEST
+
+  × adding a new package
+  ╰─▶ Failed to resolve the latest version of this-package-does-not-exist-sq-
+      98765: Failed to fetch metadata from https://registry.npmjs.org/this-
+      package-does-not-exist-sq-98765: HTTP status client error (404 Not
+      Found)
+

@@ -3,10 +3,10 @@ import re
 from collections import Counter
 from pathlib import Path
 
+from ..clean import cap_error_lines, trim
+
 NAMES = {"pytest", "py.test"}
 MY_FRAMES = 2
-MAX_ERROR_LINES = 15
-MAX_LINE = 300
 FALLBACK_LINES = 10
 
 _SESSION_RE = re.compile(r"^=+ test session starts =+$", re.MULTILINE)
@@ -122,24 +122,16 @@ def _describe(body):
             code = pointed_at or (following.strip() if following.startswith("    ") else "")
             pointed_at = None
             if not _NOT_MY_CODE_RE.search(m[1]):
-                frames.append(_trim(f"    {m[1]}:{m[2]}  {code}".rstrip()))
+                frames.append(trim(f"    {m[1]}:{m[2]}  {code}".rstrip()))
 
     if not errors:
         # An unfamiliar format (--tb=native, say). Showing its end beats showing nothing.
-        return [_trim("    " + line) for line in body if line.strip()][-FALLBACK_LINES:]
+        return [trim("    " + line) for line in body if line.strip()][-FALLBACK_LINES:]
     # pytest indents errors to match the code above them; only the relative indent means anything.
     margin = min(len(line) - len(line.lstrip()) for line in errors)
-    errors = [_trim("    " + line[margin:]) for line in errors]
-    if len(errors) > MAX_ERROR_LINES:
-        # The end of a chained exception is the error that actually surfaced.
-        hidden = len(errors) - MAX_ERROR_LINES
-        errors = [*errors[: MAX_ERROR_LINES - 2], f"    … {hidden} more lines in the log …", *errors[-2:]]
+    errors = [trim("    " + line[margin:]) for line in errors]
     notes = [f"    ({name} hidden, see log)" for name in captured]
-    return [*frames[-MY_FRAMES:], *errors, *notes]
-
-
-def _trim(line):
-    return line if len(line) <= MAX_LINE else f"{line[:MAX_LINE]}…"
+    return [*frames[-MY_FRAMES:], *cap_error_lines(errors), *notes]
 
 
 def _warnings(section, lines, totals):

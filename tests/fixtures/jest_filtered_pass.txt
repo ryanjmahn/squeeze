@@ -1,0 +1,155 @@
+  console.log
+    noise from a passing test 0
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 1
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 2
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 3
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 4
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 5
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 6
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 7
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 8
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 9
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 10
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 11
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 12
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 13
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 14
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 15
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 16
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 17
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 18
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 19
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 20
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 21
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 22
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 23
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 24
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 25
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 26
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 27
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 28
+
+      at Object.log (src/pass.test.js:3:39)
+
+  console.log
+    noise from a passing test 29
+
+      at Object.log (src/pass.test.js:3:39)
+
+Test Suites: 1 passed, 1 total
+Tests:       30 passed, 30 total
+Snapshots:   0 total
+Time:        0.107 s, estimated 1 s
+Ran all test suites matching src/pass.test.js.

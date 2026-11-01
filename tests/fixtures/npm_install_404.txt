@@ -1,0 +1,8 @@
+npm error code E404
+npm error 404 Not Found - GET https://registry.npmjs.org/this-package-does-not-exist-sq-98765 - Not found
+npm error 404
+npm error 404  The requested resource 'this-package-does-not-exist-sq-98765@*' could not be found or you do not have permission to access it.
+npm error 404
+npm error 404 Note that you can also install from a
+npm error 404 tarball, folder, http url, or git url.
+npm error A complete log of this run can be found in: /home/user/.npm/_logs/2026-11-01T11_04_49_443Z-debug-0.log

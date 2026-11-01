@@ -1,0 +1,21 @@
+npm warn using --force Recommended protections disabled.
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: react-dom@18.3.1
+npm warn Found: react@17.0.2
+npm warn node_modules/react
+npm warn   react@"17" from the root project
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer react@"^18.3.1" from react-dom@18.3.1
+npm warn node_modules/react-dom
+npm warn   react-dom@"18" from the root project
+npm warn
+npm warn Conflicting peer dependency: react@18.3.1
+npm warn node_modules/react
+npm warn   peer react@"^18.3.1" from react-dom@18.3.1
+npm warn   node_modules/react-dom
+npm warn     react-dom@"18" from the root project
+
+added 6 packages, and audited 7 packages in 537ms
+
+found 0 vulnerabilities

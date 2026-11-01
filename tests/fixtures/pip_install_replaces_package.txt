@@ -1,0 +1,12 @@
+Collecting idna==3.7
+  Downloading idna-3.7-py3-none-any.whl.metadata (9.9 kB)
+Downloading idna-3.7-py3-none-any.whl (66 kB)
+Installing collected packages: idna
+  Attempting uninstall: idna
+    Found existing installation: idna 3.20
+    Uninstalling idna-3.20:
+      Successfully uninstalled idna-3.20
+Successfully installed idna-3.7
+
+[notice] A new release of pip is available: 25.3 -> 26.2.2
+[notice] To update, run: /venv/bin/python3.14 -m pip install --upgrade pip

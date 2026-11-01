@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /project/vt2
+
+ ❯ src/group.test.js (5 tests | 5 failed) 3ms
+   × first with shared error 2ms
+   × second with shared error 0ms
+   × each 1 0ms
+   × each 2 0ms
+   × each 3 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/group.test.js > first with shared error
+ FAIL  src/group.test.js > second with shared error
+Error: same error object
+ ❯ src/group.test.js:2:16
+      1| import { test } from "vitest";
+      2| const shared = new Error("same error object");
+       |                ^
+      3| function fail() { throw shared; }
+      4| test("first with shared error", () => { fail(); });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/group.test.js > each 1
+ FAIL  src/group.test.js > each 2
+ FAIL  src/group.test.js > each 3
+Error: identical message
+ ❯ src/group.test.js:6:47
+      4| test("first with shared error", () => { fail(); });
+      5| test("second with shared error", () => { fail(); });
+      6| test.each([1, 2, 3])("each %i", () => { throw new Error("identical mes…
+       |                                               ^
+      7|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed (5)
+   Start at  20:07:11
+   Duration  73ms (transform 52%, import 24%, tests 15%, worker 8%)
+
