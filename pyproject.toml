@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "squeeze-logs"
+version = "0.0.1"
+description = "Runs a command, keeps the full log on disk, prints only what matters."
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+sq = "squeeze.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["squeeze*"]
