@@ -9,7 +9,7 @@
 | `sq stats` | Your tokens saved. Also `--month`, `--all`, `--repo`, `--reset`. |
 | `sq card` | Make a shareable HTML and SVG card. Also `--month`, `--all`. |
 
-Flags for `sq` go before the command, so `sq pytest --raw` passes `--raw` to pytest. To run a real program called `init`, `stats` or `card`, use `sq -- init`. Set `SQUEEZE_KEEP_LOGS` to keep more or fewer than 50 logs.
+Flags for `sq` go before the command, so `sq pytest --raw` passes `--raw` to pytest. To run a real program called `init`, `stats` or `card`, use `sq -- init`. When a command's output is so short that squeezing wouldn't save anything, `sq` prints it with a one-line header and skips the stats and log path. The log is still saved. Set `SQUEEZE_KEEP_LOGS` to keep more or fewer than 50 logs.
 
 ## Stats
 

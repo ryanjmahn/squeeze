@@ -30,6 +30,14 @@ class CleanTest(unittest.TestCase):
     def test_progress_bars_keep_only_the_final_state(self):
         self.assertEqual(clean("10%\r50%\r100%\ndone\n"), "100%\ndone")
 
+    def test_npm_script_banners_are_removed(self):
+        self.assertEqual(clean("\n> site@0.1.0 build\n> next build\n\nCompiled\n"), "Compiled")
+        self.assertEqual(clean("> @scope/pkg@1.0.0 test:unit\n> jest\n\nok\n"), "ok")
+
+    def test_lookalikes_of_a_banner_stay(self):
+        for text in (">       assert a@b c\n>       more", "> quoted text\nnext", "> a@b c\nnot a command"):
+            self.assertEqual(clean(text), text)
+
     def test_windows_line_endings(self):
         self.assertEqual(clean("one\r\ntwo\r\n"), "one\ntwo")
 
@@ -91,6 +99,38 @@ class GenericTest(unittest.TestCase):
         result = generic.squeeze("\n".join(lines), 0)
         for error in errors:
             self.assertIn(error, result)
+
+    def warnings_in(self, *middle):
+        lines = self.noise(500)
+        lines[250:250] = middle
+        return generic.squeeze("\n".join(lines), 0)
+
+    def test_warnings_survive_a_successful_build(self):
+        # Line shapes from real next and vite builds.
+        for line in (
+            "⚠ No build cache found. Please configure build caching",
+            "(!) Your Vite config uses features that are unsupported",
+            "(node:4844) [DEP0205] DeprecationWarning: module.register() is deprecated",
+            "warning: unused variable",
+            "npm WARN something odd",
+        ):
+            with self.subTest(line):
+                self.assertIn(line, self.warnings_in(line))
+
+    def test_warnings_differing_by_a_number_show_once(self):
+        result = self.warnings_in("(node:4844) DeprecationWarning: old", "noise", "(node:4852) DeprecationWarning: old")
+        self.assertEqual(result.count("DeprecationWarning"), 1)
+
+    def test_warnings_have_a_ceiling(self):
+        result = self.warnings_in(*(f"warning: kind {chr(97 + n)}" for n in range(26)))
+        self.assertEqual(result.count("warning: kind"), generic.MAX_WARNINGS)
+
+    def test_warnings_do_not_crowd_out_errors(self):
+        result = self.warnings_in(*(f"warning: kind {chr(97 + n)}" for n in range(26)), "FATAL: the real problem")
+        self.assertIn("FATAL: the real problem", result)
+
+    def test_words_containing_warn_are_not_warnings(self):
+        self.assertNotIn("forewarned", self.warnings_in("forewarned"))
 
     def test_success_keeps_a_shorter_tail_than_failure(self):
         output = "\n".join(self.noise(500))

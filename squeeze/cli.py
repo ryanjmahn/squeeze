@@ -66,13 +66,15 @@ def _print_squeezed(name, words, code, elapsed, log_path, make_entry):
         def render(summary):
             return "\n\n".join(part for part in (prefix + summary, body, footer) if part) + "\n"
 
-        # "After" must count everything printed, including this summary, so measure a draft of it.
+        # "After" must count everything printed, including this summary and any celebration, so measure a draft.
         draft = render(stats.summary(before, stats.measure(body)))
-        report = render(stats.summary(before, stats.measure(draft)))
+        line = _celebration(make_entry, tool, before, stats.measure(draft))
+        celebration = f"{line}\n" if line else ""
+        report = render(stats.summary(before, stats.measure(draft + celebration))) + celebration
+        if len(report) >= before[1]:
+            # Nothing is hidden, so there's no saving to report and no reason to open the log.
+            report = "\n".join(part for part in (prefix.removesuffix(" · "), body) if part) + "\n" + celebration
         after = stats.measure(report)
-        if line := _celebration(make_entry, tool, before, after):
-            report += f"{line}\n"
-            after = stats.measure(report)
         out.write(report.encode("utf-8", "replace"))
         out.flush()
     except BrokenPipeError:

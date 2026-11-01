@@ -7,6 +7,8 @@ ERROR_RE = re.compile(r"error|fail|exception|fatal", re.IGNORECASE)
 _ANSI_RE = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\)|[@-Z\\-_])")
 _NUMBER_RE = re.compile(r"0x[0-9a-fA-F]+|\d+")
 _BACKSPACE_RE = re.compile(r"[^\n\x08]\x08")
+# What `npm run build` prints first: "> pkg@1.0.0 build" and "> the command". The agent just ran it.
+_NPM_BANNER_RE = re.compile(r"^> \S+@\S+ [\w:.-]+.*\n> .*\n", re.MULTILINE)
 
 
 def _apply_backspaces(text):
@@ -23,7 +25,11 @@ def clean(raw):
     text = _apply_backspaces(_ANSI_RE.sub("", raw))
     # \r moves the cursor back so the next write overwrites the line; only the last write was ever visible.
     lines = (line.rstrip("\r").rsplit("\r", 1)[-1].rstrip() for line in text.split("\n"))
-    return "\n".join(lines).rstrip("\n")
+    return _NPM_BANNER_RE.sub("", "\n".join(lines)).strip("\n")
+
+
+def without_numbers(line):
+    return _NUMBER_RE.sub("#", line)
 
 
 def _repeat_key(line):
@@ -33,7 +39,7 @@ def _repeat_key(line):
     # and in a line with no words the numbers are the data.
     if ERROR_RE.search(line) or not re.search(r"[^\W\d]", line):
         return line
-    return _NUMBER_RE.sub("#", line)
+    return without_numbers(line)
 
 
 def collapse_runs(lines):

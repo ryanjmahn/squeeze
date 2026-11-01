@@ -190,6 +190,22 @@ class NpmTest(unittest.TestCase):
         self.assertIn("+ retrying with 2 workers", result)
         self.assertIn("scripts/build.js:9:3", result)
 
+    def test_install_scripts_list_is_dropped_but_its_summary_stays(self):
+        # Line shapes from a real npm 11 install.
+        output = (
+            "added 516 packages in 28s\n"
+            "npm warn install-scripts 2 packages have install scripts not yet covered by allowScripts:\n"
+            "npm warn install-scripts   esbuild@0.18.20 (postinstall: node install.js)\n"
+            "npm warn install-scripts   @tsparticles/engine@3.9.1 (install: node ./scripts/install.js)\n"
+            "npm warn install-scripts\n"
+            "npm warn install-scripts Run `npm install-scripts ls` to review.\n"
+        )
+        result = npm.squeeze(output, 0)
+        self.assertIn("2 packages have install scripts", result)
+        self.assertIn("npm install-scripts ls", result)
+        self.assertNotIn("esbuild", result)
+        self.assertNotIn("tsparticles", result)
+
     def test_yarn_peer_warnings_are_not_counted_as_deprecations(self):
         line = 'warning " > react-dom@18.3.1" has unmet peer dependency "react@^18.3.1".'
         self.assertIn(line, npm.squeeze(f"{line}\nDone in 1.00s.", 0))
@@ -243,6 +259,11 @@ class PipTest(unittest.TestCase):
         for line in ("Build failed: no compiler", "BUG: broken wheel", "MB limit exceeded"):
             with self.subTest(line):
                 self.assertIn(line, pip.squeeze(f"{line}\n", 1))
+
+    def test_progress_bars_are_noise_but_their_lookalikes_are_not(self):
+        output = "   ━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 49.3 MB/s  0:00:00\nSuccessfully installed pytest-9.2.0\n"
+        self.assertEqual(pip.squeeze(output, 0), "✓ installed 1 package: pytest-9.2.0")
+        self.assertIn("1.3 MB limit exceeded", pip.squeeze("1.3 MB limit exceeded\n", 1))
 
     def test_uv(self):
         self.assertEqual(run("uv_pip_success"), "✓ Installed 12 packages in 9ms")

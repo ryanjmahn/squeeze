@@ -4,7 +4,7 @@
 
 A log squeezer for coding agents.
 
-[![Stars](https://img.shields.io/github/stars/your-github-username/squeeze?style=flat&color=black)](https://github.com/your-github-username/squeeze/stargazers)
+[![Stars](https://img.shields.io/github/stars/YOUR_REAL_NAME/squeeze?style=flat&color=black)](https://github.com/YOUR_REAL_NAME/squeeze/stargazers)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-black.svg)](https://www.python.org)
 [![Dependencies: none](https://img.shields.io/badge/Dependencies-none-black.svg)](pyproject.toml)
 
@@ -70,7 +70,7 @@ Squeezing can never hide a failure. If a squeezer crashes, returns nothing, or f
 Squeeze needs Python 3.10 or newer and has no dependencies. [pipx](https://pipx.pypa.io) puts `sq` on your `PATH` everywhere, which is what an agent needs.
 
 ```bash
-pipx install git+https://github.com/your-github-username/squeeze
+pipx install git+https://github.com/YOUR_REAL_NAME/squeeze
 sq init >> CLAUDE.md      # tells your agent to use sq
 sq pytest                 # or any noisy command
 sq stats                  # see what you saved
@@ -81,7 +81,7 @@ Every command and flag is in [docs/usage.md](docs/usage.md).
 ### Run it locally
 
 ```bash
-git clone https://github.com/your-github-username/squeeze.git
+git clone https://github.com/YOUR_REAL_NAME/squeeze.git
 cd squeeze
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
@@ -114,7 +114,7 @@ Issues and pull requests are welcome. If a tool's output gets squeezed badly, a 
 
 ## Credits
 
-Built and maintained by [@your-github-username](https://github.com/your-github-username).
+Built and maintained by [@YOUR_REAL_NAME](https://github.com/YOUR_REAL_NAME).
 
 ## Star the repo
 

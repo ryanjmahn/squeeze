@@ -13,10 +13,11 @@
 
 ## Real numbers
 
-Measured on small sample projects, counting the header and footer Squeeze adds. Tokens are estimated as characters ÷ 4. Yours will differ, and a very short command can cost a few tokens rather than save them.
+Measured on sample projects and real ones, counting the header and footer Squeeze adds. Tokens are estimated as characters ÷ 4. Yours will differ, and a very short command can cost a few tokens rather than save them.
 
 | Run | Lines | Tokens (est.) |
 |---|---|---|
+| `pytest -v`, all passing, a real project | 151 → 5 | ~3.2k → ~44 |
 | `jest`, all passing, noisy logs | 155 → 5 | ~737 → ~42 |
 | `pytest -v`, all passing | 70 → 5 | ~1.3k → ~38 |
 | `pip install flask` | 14 → 5 | ~409 → ~46 |

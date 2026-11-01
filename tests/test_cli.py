@@ -40,6 +40,42 @@ class CliTestCase(unittest.TestCase):
         return [json.loads(line) for line in path.read_text().splitlines()]
 
 
+class ShortOutputTest(CliTestCase):
+    def test_nothing_hidden_means_no_stats_or_log_path(self):
+        result = self.sq("sh", "-c", "echo hi")
+        self.assertRegex(result.stdout.decode().split("🎖")[0], r"^🍋 sh · exit 0 · [\d.]+s\nhi\n$")
+
+    def test_silent_success_is_one_line(self):
+        self.sq("true")  # the first run earns a badge
+        self.assertRegex(self.sq("true").stdout.decode(), r"^🍋 true · exit 0 · [\d.]+s\n$")
+
+    def test_a_short_failure_still_shows_its_exit_code_and_output(self):
+        self.sq("true")
+        result = self.sq("sh", "-c", "echo broke; exit 3")
+        self.assertEqual(result.returncode, 3)
+        self.assertRegex(result.stdout.decode(), r"^🍋 sh · exit 3 · [\d.]+s\nbroke\n$")
+
+    def test_the_log_is_still_saved(self):
+        self.sq("sh", "-c", "echo hi")
+        self.assertEqual(self.logs()[0].read_text(), "hi\n")
+
+    def test_long_output_keeps_the_full_report(self):
+        text = self.sq("sh", "-c", "seq 1000").stdout.decode()
+        self.assertIn("1000 lines →", text)
+        self.assertIn("full log: ", text)
+
+    def test_a_shortened_line_points_to_the_log(self):
+        code = "print('x' * 5000)"
+        self.assertIn("full log: ", self.sq(sys.executable, "-c", code).stdout.decode())
+
+    def test_history_records_what_was_really_printed(self):
+        self.sq("true")
+        result = self.sq("true")
+        entry = self.history()[1]
+        self.assertEqual(entry["lines_after"], 1)
+        self.assertEqual(entry["tokens_after"], len(result.stdout.decode()) // 4)
+
+
 class InitTest(CliTestCase):
     def test_prints_only_the_snippet_to_stdout(self):
         result = self.sq("init")
@@ -61,7 +97,7 @@ class ArgumentsTest(CliTestCase):
     def test_flags_after_the_command_belong_to_the_command(self):
         result = self.sq("sh", "-c", 'echo "got $1"', "sh", "--raw")
         self.assertIn(b"got --raw", result.stdout)
-        self.assertIn(b"lines", result.stdout.split(b"\n")[0])  # squeezed, so sq didn't take the flag
+        self.assertIn(b"exit 0", result.stdout.split(b"\n")[0])  # sq's header, so sq didn't take the flag
 
     def test_help_after_the_command_belongs_to_the_command(self):
         self.assertIn(b"got -h", self.sq("sh", "-c", 'echo "got $1"', "sh", "-h").stdout)
@@ -225,7 +261,7 @@ class RotationTest(CliTestCase):
         self.make_logs(5)
         for path in self.logs():
             os.utime(path, (4_000_000_000, 4_000_000_000))
-        result = self.sq("sh", "-c", "echo mine", env={**self.env, "SQUEEZE_KEEP_LOGS": "1"})
+        result = self.sq("sh", "-c", "seq 1000", env={**self.env, "SQUEEZE_KEEP_LOGS": "1"})
         printed = result.stdout.decode().split("full log: ")[1].split("\n")[0]
         self.assertTrue((self.dir / printed).exists())
 

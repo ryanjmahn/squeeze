@@ -19,6 +19,7 @@ _NOISE_RE = re.compile(
     r"|^INFO: pip is looking at"
     # Build steps that went fine. A step that finished with status 'error' stays.
     r"|^\s+.*: (?:started|finished with status 'done')$"
+    r"|^\s*━"  # a progress bar
     # uv
     r"|^Using Python .* environment at"
     r"|^(?:Resolved|Prepared|Uninstalled) \d+ packages? in "

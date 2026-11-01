@@ -34,6 +34,7 @@ _NOISE_RE = re.compile(
     r"|^Run `npm audit`"
     r"|^To address "
     r"|^\s*npm audit fix"
+    r"|^npm warn install-scripts(?:\s+\S+@\S+ \(.*)?\s*$"  # the list of packages; its count and advice stay
     r"|^Packages are (?:cloned|hard linked|copied)"
     r"|^\s*(?:Content-addressable store|Virtual store) is at"
     r"|^\++$"

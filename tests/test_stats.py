@@ -412,6 +412,11 @@ class CelebrationInARunTest(StatsCommandTest):
         self.assertEqual(entry["lines_after"], len(result.stdout.splitlines()))
         self.assertEqual(entry["tokens_after"], len(result.stdout.decode()) // 4)
 
+    def test_the_header_count_includes_the_line(self):
+        text = self.sq("sh", "-c", "seq 500").stdout.decode()
+        self.assertIn("Badge unlocked", text)
+        self.assertIn(f"500 lines → {len(text.splitlines())} lines", text.splitlines()[0])
+
     def test_raw_runs_do_not_celebrate(self):
         result = self.sq("--raw", "true")
         self.assertNotIn("Badge", (result.stdout + result.stderr).decode())
