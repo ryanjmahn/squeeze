@@ -4,8 +4,14 @@ import selectors
 import signal
 import subprocess
 import sys
+import time
 
 STALL_NOTICE_SECONDS = 30
+SPINNER_DELAY_SECONDS = 1  # a quick command shouldn't flicker
+SPINNER_TICK_SECONDS = 0.1
+SPINNER_FRAMES = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+MAX_LABEL = 40
+CLEAR_LINE = "\r\x1b[K"
 
 
 def _terminal_sent_it():
@@ -22,19 +28,42 @@ def _terminal_sent_it():
         os.close(tty)
 
 
-def _wait(proc, log_file):
-    """Wait for proc. Its output goes to the log, so say once if it goes quiet: it may want input."""
+def _wants_spinner():
+    """Only for a person at a terminal: to an agent or a log, a spinner is just tokens."""
+    return sys.stderr.isatty() and os.environ.get("TERM") != "dumb" and not os.environ.get("CI")
+
+
+def _wait(proc, log_file, label):
+    """Wait for proc, whose output is going to the log. Show it's alive, and say once if it goes quiet: it may want input."""
+    spinner = _wants_spinner()
+    started = last_output = time.monotonic()
     size = 0
     noted = False
-    while True:
-        try:
-            return proc.wait(timeout=STALL_NOTICE_SECONDS)
-        except subprocess.TimeoutExpired:
-            current = os.fstat(log_file.fileno()).st_size
-            if current == size and not noted:
-                noted = True
-                print(f"sq: still running, no output for {STALL_NOTICE_SECONDS}s, it may be waiting for input (log: {log_file.name})", file=sys.stderr)
-            size = current
+    drawn = False
+    ticks = 0
+    try:
+        while True:
+            try:
+                return proc.wait(timeout=SPINNER_TICK_SECONDS if spinner else STALL_NOTICE_SECONDS)
+            except subprocess.TimeoutExpired:
+                now = time.monotonic()
+                current = os.fstat(log_file.fileno()).st_size
+                if current != size:
+                    size = current
+                    last_output = now
+                if now - last_output >= STALL_NOTICE_SECONDS and not noted:
+                    noted = True
+                    print(f"{CLEAR_LINE if drawn else ''}sq: still running, no output for {STALL_NOTICE_SECONDS}s, it may be waiting for input (log: {log_file.name})", file=sys.stderr)
+                if spinner and now - started >= SPINNER_DELAY_SECONDS:
+                    drawn = True
+                    ticks += 1
+                    frame = SPINNER_FRAMES[ticks % len(SPINNER_FRAMES)]
+                    sys.stderr.write(f"{CLEAR_LINE}{frame} {label[:MAX_LABEL]} · {now - started:.0f}s")
+                    sys.stderr.flush()
+    finally:
+        if drawn:
+            sys.stderr.write(CLEAR_LINE)
+            sys.stderr.flush()
 
 
 def _write_all(fd, data):
@@ -78,7 +107,7 @@ def _tee(proc, log_file):
     return proc.wait()
 
 
-def run(argv, log_file, raw=False):
+def run(argv, log_file, raw=False, label=None):
     """Run argv, saving its output to log_file. Returns a shell-style exit code.
 
     Normally the output only goes to the log. With raw it also streams to the screen as usual.
@@ -114,7 +143,7 @@ def run(argv, log_file, raw=False):
             return could_not_start(127, f"sq: command not found: {argv[0]}")
         except OSError as e:
             return could_not_start(126, f"sq: cannot run {argv[0]}: {e}")
-        returncode = _tee(proc, log_file) if raw else _wait(proc, log_file)
+        returncode = _tee(proc, log_file) if raw else _wait(proc, log_file, label or argv[0])
     finally:
         for s, handler in previous.items():
             signal.signal(s, handler)

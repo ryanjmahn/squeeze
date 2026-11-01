@@ -1,6 +1,7 @@
 import io
 import os
 import pty
+import re
 import signal
 import subprocess
 import sys
@@ -175,6 +176,71 @@ class SqTest(unittest.TestCase):
         code, log = self.run_in_terminal(py("input('Continue? ')"), ctrl_c=False)
         self.assertEqual(code, 1)
         self.assertIn("EOFError", log)
+
+    def terminal_screen(self, *argv, env=None):
+        """Run sq in a pseudo-terminal and return everything drawn on its screen."""
+        pid, fd = pty.fork()
+        if pid == 0:
+            os.chdir(self.dir)
+            os.execve(sys.executable, [sys.executable, *SQ[1:], *argv], env or self.terminal_env())
+        self.addCleanup(os.close, fd)
+        screen = b""
+        try:
+            while chunk := os.read(fd, 4096):
+                screen += chunk
+        except OSError:
+            pass
+        _, status = os.waitpid(pid, 0)
+        return os.waitstatus_to_exitcode(status), screen.decode()
+
+    def terminal_env(self):
+        env = {**ENV, "TERM": "xterm"}
+        env.pop("CI", None)
+        return env
+
+    def test_a_slow_command_shows_a_spinner_then_clears_it(self):
+        code, screen = self.terminal_screen(*py("import time, sys; time.sleep(1.6); sys.exit(4)"))
+        self.assertEqual(code, 4)
+        name = Path(sys.executable).name
+        self.assertRegex(screen, rf"[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] {re.escape(name)} · \d+s")
+        # It's erased before the report, so the report starts on a clean line.
+        self.assertRegex(screen, rf"\r\x1b\[K🍋 {re.escape(name)} · exit 4")
+
+    def test_a_quick_command_never_flickers(self):
+        _, screen = self.terminal_screen("true")
+        self.assertNotIn("\x1b[K", screen)
+
+    def test_the_spinner_never_reaches_the_log(self):
+        before = set(self.logs())
+        self.terminal_screen(*py("import time; time.sleep(1.4); print('real output')"))
+        log = (set(self.logs()) - before).pop().read_text()
+        self.assertEqual(log, "real output\n")
+
+    def test_no_spinner_for_agents_or_ci(self):
+        slow = py("import time; time.sleep(1.4)")
+        piped = subprocess.run([*SQ, *slow], cwd=self.dir, env=self.terminal_env(), capture_output=True)
+        self.assertNotIn("⠙".encode(), piped.stderr + piped.stdout)
+        self.assertNotIn(b"\x1b[K", piped.stderr + piped.stdout)
+        for extra in ({"CI": "true"}, {"TERM": "dumb"}):
+            with self.subTest(extra):
+                _, screen = self.terminal_screen(*slow, env={**self.terminal_env(), **extra})
+                self.assertNotIn("\x1b[K", screen)
+
+    def test_raw_mode_has_no_spinner(self):
+        _, screen = self.terminal_screen("--raw", *py("import time; time.sleep(1.4)"))
+        self.assertNotIn("\x1b[K", screen)
+
+    def test_a_stall_notice_clears_the_spinner_first(self):
+        log_path = self.dir / "stall.log"
+        stderr = io.StringIO()
+        stderr.isatty = lambda: True
+        with log_path.open("xb") as log_file, mock.patch.multiple(runner, STALL_NOTICE_SECONDS=0.3, SPINNER_DELAY_SECONDS=0.1), \
+                mock.patch.object(sys, "stderr", stderr), mock.patch.dict(os.environ, self.terminal_env(), clear=True):
+            runner.run(py("import time; time.sleep(0.7)"), log_file, label="quiet")
+        text = stderr.getvalue()
+        self.assertEqual(text.count("may be waiting for input"), 1)
+        self.assertIn("\r\x1b[Ksq: still running", text)
+        self.assertTrue(text.endswith("\r\x1b[K"))
 
     def test_silence_gets_one_notice(self):
         log_path = self.dir / "quiet.log"

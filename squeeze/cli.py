@@ -219,7 +219,7 @@ def main(argv=None):
 
     start = time.monotonic()
     with log_file:
-        code = runner.run(run_argv, log_file, raw=args.raw)
+        code = runner.run(run_argv, log_file, raw=args.raw, label=name)
     elapsed = time.monotonic() - start
 
     def make_entry(tool, before, after):
