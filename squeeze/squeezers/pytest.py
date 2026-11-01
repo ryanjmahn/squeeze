@@ -3,7 +3,7 @@ import re
 from collections import Counter
 from pathlib import Path
 
-from ..clean import cap_error_lines, trim
+from ..clean import cap_error_lines, last_lines, trim
 
 NAMES = {"pytest", "py.test"}
 MY_FRAMES = 2
@@ -19,6 +19,10 @@ _BANNER_RE = re.compile(r"^!{3,} (.+?) !{3,}$")
 _SUMMARY_RE = re.compile(r"^(?:FAILED|ERROR|SUBFAILED(\(.*?\))?) (\S.*?)(?: - (.*))?$")
 _FRAME_RE = re.compile(r"^(?!E\s)([^\s>].*?\.py):(\d+):(?: (.*))?$")
 _NOT_MY_CODE_RE = re.compile(r"site-packages|dist-packages|/lib/python\d|<frozen")
+_NATIVE_FRAME_RE = re.compile(r'^\s*File "(.+?)", line (\d+), in ')
+_CARETS_RE = re.compile(r"^\s*[~^]+\s*$")
+_CAPTURED_RE = re.compile(r"^-+ (Captured .*?) -+$")
+_COVERAGE_FAILED_RE = re.compile(r"^FAIL Required test coverage.*$", re.MULTILINE)
 _WARNING_RE = re.compile(r"^\s*(\S+?):\d+: (\w*Warning):")
 _WARNED_NODE_RE = re.compile(r"^\S.*?(?:: (\d+) warnings?)?$")
 
@@ -34,21 +38,23 @@ def squeeze(output, exit_code):
     if totals is None:
         raise ValueError("no pytest totals found, so this run may have crashed")
 
+    root = next((line.split(": ", 1)[1] for line in lines[:10] if line.startswith("rootdir: ")), None)
     sections = _split_sections(lines)
-    failures = _failures(sections)
+    failures = _failures(sections, root)
     # pytest's own count is the check on our parsing: never report fewer failures than it did.
     expected = sum(int(n) for n, _ in re.findall(r"(\d+) (failed|errors?)\b", totals))
     if len(failures) != expected:
         raise ValueError(f"parsed {len(failures)} failures, pytest reported {expected}")
-    # Exit 5 means no tests ran. Any other failure code with no failed tests has a cause we
-    # didn't parse, such as a coverage plugin's threshold, so it mustn't look like a pass.
-    if exit_code not in (0, 5) and not failures:
+    coverage = _COVERAGE_FAILED_RE.findall(output)
+    # Exit 5 means no tests ran. Any other failure code with no failed tests and no
+    # coverage failure has a cause we didn't parse, so it mustn't look like a pass.
+    if exit_code not in (0, 5) and not failures and not coverage:
         raise ValueError(f"exit {exit_code} with no failed tests")
 
     head = f"✓ {totals}" if exit_code == 0 and not failures else totals
     banners = [m[1] for line in lines if (m := _BANNER_RE.match(line))]
-    warnings = _warnings(sections.get("warnings summary", []), lines, totals)
-    parts = ["\n".join([head, *banners]), *failures, warnings]
+    warnings = _warnings(sections.get("warnings summary", []), root, totals)
+    parts = ["\n".join([head, *banners, *coverage]), *failures, warnings]
     return "\n\n".join(part for part in parts if part)
 
 
@@ -63,7 +69,7 @@ def _split_sections(lines):
     return sections
 
 
-def _failures(sections):
+def _failures(sections, root):
     """One rendered entry per failure. Every summary line gets an entry, parsed block or not."""
     summary = [
         (f"{m[2]} {m[1]}" if m[1] else m[2], m[3])
@@ -79,7 +85,7 @@ def _failures(sections):
             summary.remove(match)
         label = re.match(r"ERROR (?:at (\w+) of|(collecting))", title)
         suffix = f" ({label[1] or 'collection'} error)" if label else ""
-        entries.append("\n".join([f"✗ {match[0] if match else name}{suffix}", *_describe(body)]))
+        entries.append("\n".join([f"✗ {match[0] if match else name}{suffix}", *_describe(body, root)]))
     for node, message in summary:
         entries.append(f"✗ {node}" + (f"\n    {message}" if message else ""))
     return entries
@@ -101,12 +107,33 @@ def _blocks(lines):
     return blocks
 
 
-def _describe(body):
-    """The last frames in the user's own code, then the error lines."""
-    captured = [line.strip("- ") for line in body if re.match(r"^-+ Captured .* -+$", line)]
-    if captured:
-        body = body[: body.index(next(line for line in body if line.strip("- ") == captured[0]))]
+def _describe(body, root):
+    """The last frames in the user's own code, the error lines, and the end of anything the test printed."""
+    body, captured = _split_captured(body)
+    frames, errors = _parse_traceback(body)
+    if not errors:
+        frames, errors = _parse_native_traceback(body, root)
+    if not errors:
+        # An unfamiliar format. Showing its end beats showing nothing.
+        return [*(trim("    " + line) for line in body if line.strip())][-FALLBACK_LINES:] + captured
+    # pytest indents errors to match the code above them; only the relative indent means anything.
+    margin = min(len(line) - len(line.lstrip()) for line in errors)
+    errors = [trim("    " + line[margin:]) for line in errors]
+    return [*frames[-MY_FRAMES:], *cap_error_lines(errors), *captured]
 
+
+def _split_captured(body):
+    """Separate the traceback from what the test printed. A print is often the clue, so keep its end."""
+    starts = [i for i, line in enumerate(body) if _CAPTURED_RE.match(line)]
+    rendered = []
+    for start, end in zip(starts, [*starts[1:], len(body)]):
+        printed = [line for line in body[start + 1 : end] if line.strip()]
+        rendered.append(f"    {_CAPTURED_RE.match(body[start])[1]}:")
+        rendered.extend(trim("      " + line) for line in last_lines(printed))
+    return (body[: starts[0]] if starts else body), rendered
+
+
+def _parse_traceback(body):
     frames = []
     errors = []
     pointed_at = None
@@ -123,22 +150,32 @@ def _describe(body):
             pointed_at = None
             if not _NOT_MY_CODE_RE.search(m[1]):
                 frames.append(trim(f"    {m[1]}:{m[2]}  {code}".rstrip()))
-
-    if not errors:
-        # An unfamiliar format (--tb=native, say). Showing its end beats showing nothing.
-        return [trim("    " + line) for line in body if line.strip()][-FALLBACK_LINES:]
-    # pytest indents errors to match the code above them; only the relative indent means anything.
-    margin = min(len(line) - len(line.lstrip()) for line in errors)
-    errors = [trim("    " + line[margin:]) for line in errors]
-    notes = [f"    ({name} hidden, see log)" for name in captured]
-    return [*frames[-MY_FRAMES:], *cap_error_lines(errors), *notes]
+    return frames, errors
 
 
-def _warnings(section, lines, totals):
+def _parse_native_traceback(body, root):
+    """--tb=native prints Python's own format: File "x", line N, in f, then the code, ending with the error."""
+    frames = []
+    last = None
+    for i, line in enumerate(body):
+        if m := _NATIVE_FRAME_RE.match(line):
+            last = i
+            if not _NOT_MY_CODE_RE.search(m[1]):
+                path = m[1].removeprefix(f"{root}/") if root else m[1]
+                code = body[i + 1].strip() if i + 1 < len(body) else ""
+                frames.append(trim(f"    {path}:{m[2]}  {code}".rstrip()))
+    if last is None:
+        return [], []
+    after = body[last + 1 :]
+    # Frames without source (compiled or frozen code) go straight to the error, which isn't indented.
+    after = after[1:] if after and after[0].startswith("    ") else after
+    return frames, [line for line in after if line.strip() and not _CARETS_RE.match(line)]
+
+
+def _warnings(section, root, totals):
     total = re.search(r"(\d+) warnings?\b", totals)
     if not total:
         return ""
-    root = next((line.split(": ", 1)[1] for line in lines[:10] if line.startswith("rootdir: ")), None)
     counts = Counter()
     nodes = 0
     for line in section:

@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from squeeze import cli, squeezers, stats
+from squeeze import cli, logs, squeezers, stats
 from squeeze.clean import clean, collapse_runs, render_run
 from squeeze.squeezers import generic
 
@@ -153,20 +153,87 @@ class FallbackTest(unittest.TestCase):
 
 
 class StatsTest(unittest.TestCase):
+    def summary(self, before, after):
+        return stats.summary(stats.measure(before), stats.measure(after))
+
     def test_summary(self):
         self.assertEqual(
-            stats.summary("x\n" * 812, "y\n" * 19 + "z" * 4000),
+            self.summary("x\n" * 812, "y\n" * 19 + "z" * 4000),
             "812 lines → 20 lines (-97%) · ~406 → ~1.0k tokens (est.)",
         )
 
     def test_nothing_saved_shows_no_percentage(self):
-        self.assertEqual(stats.summary("", ""), "0 lines → 0 lines · ~0 → ~0 tokens (est.)")
+        self.assertEqual(self.summary("", ""), "0 lines → 0 lines · ~0 → ~0 tokens (est.)")
+
+    def test_big_token_counts_use_millions(self):
+        self.assertIn("~28.6M →", stats.summary((2_000_000, 114_400_000), (1, 400)))
 
     def test_one_line_is_singular(self):
-        self.assertIn("10 lines → 1 line (-90%)", stats.summary("x\n" * 10, "y"))
+        self.assertIn("10 lines → 1 line (-90%)", self.summary("x\n" * 10, "y"))
 
     def test_percentage_never_rounds_up_to_100(self):
-        self.assertIn("(-99%)", stats.summary("x\n" * 1000, "y\n" * 2))
+        self.assertIn("(-99%)", self.summary("x\n" * 1000, "y\n" * 2))
+
+
+class BigLogTest(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.path = Path(tmp.name) / "big.log"
+
+    def read_small_limits(self):
+        with mock.patch.multiple(logs, MAX_WHOLE_BYTES=2000, HEAD_BYTES=200, TAIL_BYTES=200):
+            return logs.read_for_squeezing(self.path)
+
+    def test_small_logs_are_read_whole(self):
+        self.path.write_bytes(b"one\ntwo\n")
+        self.assertEqual(logs.read_for_squeezing(self.path), ("one\ntwo\n", (2, 8)))
+
+    def test_big_logs_keep_the_ends_and_errors_from_the_middle(self):
+        middle = [f"line {i}" for i in range(2000)]
+        middle[1000] = "FATAL: buried in the middle"
+        self.path.write_text("the start\n" + "\n".join(middle) + "\nthe end\n")
+        text, (lines, chars) = self.read_small_limits()
+        self.assertIn("the start", text)
+        self.assertIn("FATAL: buried in the middle", text)
+        self.assertIn("the end", text)
+        self.assertNotIn("line 500\n", text)
+        self.assertIn("too large to read whole", text)
+        self.assertLess(len(text), 2000)
+        # The stats still describe the whole log.
+        self.assertEqual(lines, 2002)
+        self.assertEqual(chars, self.path.stat().st_size)
+
+    def test_a_huge_line_without_newlines_does_not_break_reading(self):
+        self.path.write_bytes(b"x" * 10_000)
+        text, (lines, chars) = self.read_small_limits()
+        self.assertLess(len(text), 1000)
+        self.assertEqual((lines, chars), (0, 10_000))
+
+
+class OutputSizeTest(unittest.TestCase):
+    def test_backspaces_erase_like_a_terminal(self):
+        self.assertEqual(clean("working |\b/\b-\b\\\bdone\n"), "working done")
+        self.assertEqual(clean("abc\b\b\bxyz"), "xyz")
+        self.assertEqual(clean("\bstray"), "stray")
+
+    def test_generic_shortens_huge_lines_and_says_so(self):
+        result = generic.squeeze("x" * 100_000, 0)
+        self.assertLess(len(result), 400)
+        self.assertIn("chars in the log", result)
+
+    def test_the_count_includes_everything_printed(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        result = subprocess.run(
+            [sys.executable, "-m", "squeeze.cli", "sh", "-c", "seq 1000"],
+            cwd=tmp.name, env=ENV, capture_output=True,
+        )
+        text = result.stdout.decode()
+        lines = len(text.splitlines())
+        self.assertRegex(text, rf"1000 lines → {lines} lines")
+        tokens = re.search(r"→ ~(\d+) tokens", text)[1]
+        self.assertAlmostEqual(int(tokens), len(text) // 4, delta=2)
 
 
 class EndToEndTest(unittest.TestCase):

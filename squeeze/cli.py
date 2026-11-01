@@ -36,13 +36,17 @@ def main(argv=None):
 
     out = sys.stdout.buffer
     try:
-        # shortcut: loads the whole log into memory, stream it if multi-GB logs show up.
-        raw = log_path.read_bytes().decode("utf-8", "replace")
+        raw, before = logs.read_for_squeezing(log_path)
         body = squeezers.squeeze(argv, raw, code).rstrip("\n")
-        # shortcut: the "after" count skips the header and footer, so it reads about 3 lines low.
-        header = f"🍋 {Path(argv[0]).name} · exit {code} · {elapsed:.1f}s · {stats.summary(raw, body)}"
+        prefix = f"🍋 {Path(argv[0]).name} · exit {code} · {elapsed:.1f}s · "
         footer = f"full log: {os.path.relpath(log_path)}"
-        report = "\n\n".join(part for part in (header, body, footer) if part) + "\n"
+
+        def render(summary):
+            return "\n\n".join(part for part in (prefix + summary, body, footer) if part) + "\n"
+
+        # "After" must count everything printed, including this summary, so measure a draft of it.
+        draft = render(stats.summary(before, stats.measure(body)))
+        report = render(stats.summary(before, stats.measure(draft)))
         out.write(report.encode("utf-8", "replace"))
         out.flush()
     except BrokenPipeError:

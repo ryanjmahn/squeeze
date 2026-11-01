@@ -1,7 +1,7 @@
 """Fallback for any command: first lines, last lines, and anything that looks like an error."""
 from itertools import groupby
 
-from ..clean import ERROR_RE, collapse_runs, render_run
+from ..clean import ERROR_RE, collapse_runs, render_run, trim
 
 HEAD = 3
 TAIL_ON_FAILURE = 20
@@ -31,7 +31,7 @@ def squeeze(output, exit_code):
         section = [runs[i] for i in group]
         hidden = sum(count for _, count in section)
         if kept or hidden < MIN_HIDDEN:
-            result.extend(render_run(*run) for run in section)
+            result.extend(trim(render_run(*run)) for run in section)
         else:
             result.append(f"… {hidden} lines hidden …")
     return "\n".join(result)

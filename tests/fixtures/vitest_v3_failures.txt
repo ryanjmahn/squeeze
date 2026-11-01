@@ -1,0 +1,205 @@
+
+ RUN  v3.2.7 /project/vt
+
+stdout | src/pass.test.js > passing suite > case 0
+noise from a passing test [33m0[39m
+
+stdout | src/pass.test.js > passing suite > case 1
+noise from a passing test [33m1[39m
+
+stdout | src/pass.test.js > passing suite > case 2
+noise from a passing test [33m2[39m
+
+stdout | src/pass.test.js > passing suite > case 3
+noise from a passing test [33m3[39m
+
+stdout | src/pass.test.js > passing suite > case 4
+noise from a passing test [33m4[39m
+
+stdout | src/pass.test.js > passing suite > case 5
+noise from a passing test [33m5[39m
+
+stdout | src/pass.test.js > passing suite > case 6
+noise from a passing test [33m6[39m
+
+stdout | src/pass.test.js > passing suite > case 7
+noise from a passing test [33m7[39m
+
+stdout | src/pass.test.js > passing suite > case 8
+noise from a passing test [33m8[39m
+
+stdout | src/pass.test.js > passing suite > case 9
+noise from a passing test [33m9[39m
+
+stdout | src/pass.test.js > passing suite > case 10
+noise from a passing test [33m10[39m
+
+stdout | src/pass.test.js > passing suite > case 11
+noise from a passing test [33m11[39m
+
+stdout | src/pass.test.js > passing suite > case 12
+noise from a passing test [33m12[39m
+
+stdout | src/pass.test.js > passing suite > case 13
+noise from a passing test [33m13[39m
+
+stdout | src/pass.test.js > passing suite > case 14
+noise from a passing test [33m14[39m
+
+stdout | src/pass.test.js > passing suite > case 15
+noise from a passing test [33m15[39m
+
+stdout | src/pass.test.js > passing suite > case 16
+noise from a passing test [33m16[39m
+
+stdout | src/pass.test.js > passing suite > case 17
+noise from a passing test [33m17[39m
+
+stdout | src/pass.test.js > passing suite > case 18
+noise from a passing test [33m18[39m
+
+stdout | src/pass.test.js > passing suite > case 19
+noise from a passing test [33m19[39m
+
+stdout | src/pass.test.js > passing suite > case 20
+noise from a passing test [33m20[39m
+
+stdout | src/pass.test.js > passing suite > case 21
+noise from a passing test [33m21[39m
+
+stdout | src/pass.test.js > passing suite > case 22
+noise from a passing test [33m22[39m
+
+stdout | src/pass.test.js > passing suite > case 23
+noise from a passing test [33m23[39m
+
+stdout | src/pass.test.js > passing suite > case 24
+noise from a passing test [33m24[39m
+
+stdout | src/pass.test.js > passing suite > case 25
+noise from a passing test [33m25[39m
+
+stdout | src/pass.test.js > passing suite > case 26
+noise from a passing test [33m26[39m
+
+stdout | src/pass.test.js > passing suite > case 27
+noise from a passing test [33m27[39m
+
+stdout | src/pass.test.js > passing suite > case 28
+noise from a passing test [33m28[39m
+
+stdout | src/pass.test.js > passing suite > case 29
+noise from a passing test [33m29[39m
+
+ ✓ src/pass.test.js (30 tests) 3ms
+stdout | src/fail.test.js > math > adds numbers
+debug: inside failing test
+
+ ❯ src/fail.test.js (5 tests | 4 failed | 1 skipped) 6ms
+   × math > adds numbers 4ms
+     → expected -1 to be 3 // Object.is equality
+   × math > deep equal 1ms
+     → expected { a: 1, b: [ 1, 2, 3 ], c: 'x' } to deeply equal { a: 2, b: [ 1, 2, 4 ], c: 'x' }
+   × math > throws 0ms
+     → cannot read widget
+   ↓ math > skipped one
+   × top level failure 0ms
+     → expected 'hello' to contain 'z'
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/broken.test.js [ src/broken.test.js ]
+Error: Cannot find module './does-not-exist.js' imported from '/project/vt/src/broken.test.js'
+ ❯ src/broken.test.js:1:1
+      1| import x from "./does-not-exist.js";
+       | ^
+      2| import { test } from "vitest";
+      3| test("never runs", () => {});
+
+Caused by: Error: Failed to load url ./does-not-exist.js (resolved id: ./does-not-exist.js) in /project/vt/src/broken.test.js. Does the file exist?
+ ❯ loadAndTransform ../old/node_modules/vite/dist/node/chunks/config.js:22907:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fail.test.js > math > adds numbers
+AssertionError: expected -1 to be 3 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 3[39m
+[31m+ -1[39m
+
+ ❯ src/fail.test.js:4:93
+      2| import { add, explode } from "./math.js";
+      3| describe("math", () => {
+      4|   test("adds numbers", () => { console.log("debug: inside failing test…
+       |                                                                                             ^
+      5|   test("deep equal", () => { expect({ a: 1, b: [1, 2, 3], c: "x" }).to…
+      6|   test("throws", () => { explode(); });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/fail.test.js > math > deep equal
+AssertionError: expected { a: 1, b: [ 1, 2, 3 ], c: 'x' } to deeply equal { a: 2, b: [ 1, 2, 4 ], c: 'x' }
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "a": 2,[39m
+[31m+   "a": 1,[39m
+[2m    "b": [[22m
+[2m      1,[22m
+[2m      2,[22m
+[32m-     4,[39m
+[31m+     3,[39m
+[2m    ],[22m
+[2m    "c": "x",[22m
+[2m  }[22m
+
+ ❯ src/fail.test.js:5:69
+      3| describe("math", () => {
+      4|   test("adds numbers", () => { console.log("debug: inside failing test…
+      5|   test("deep equal", () => { expect({ a: 1, b: [1, 2, 3], c: "x" }).to…
+       |                                                                     ^
+      6|   test("throws", () => { explode(); });
+      7|   test.skip("skipped one", () => {});
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/fail.test.js > math > throws
+TypeError: cannot read widget
+ ❯ explode src/math.js:2:35
+      1| export function add(a, b) { return a - b; }
+      2| export function explode() { throw new TypeError("cannot read widget");…
+       |                                   ^
+      3| 
+ ❯ src/fail.test.js:6:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/fail.test.js > top level failure
+AssertionError: expected 'hello' to contain 'z'
+
+Expected: [32m"z"[39m
+Received: [31m"hello"[39m
+
+ ❯ src/fail.test.js:9:51
+      7|   test.skip("skipped one", () => {});
+      8| });
+      9| test("top level failure", () => { expect("hello").toContain("z"); });
+       |                                                   ^
+     10| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  4 failed | 30 passed | 1 skipped (35)
+   Start at  20:13:36
+   Duration  169ms (transform 15ms, setup 0ms, collect 13ms, tests 8ms, environment 0ms, prepare 98ms)
+

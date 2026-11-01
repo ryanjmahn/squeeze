@@ -1,0 +1,9 @@
+Progress: resolved 0, reused 1, downloaded 0, added 0
+ WARN  deprecated request@2.88.2: request has been deprecated, see https://github.com/request/request/issues/3142
+ ERR_PNPM_FETCH_404  GET https://registry.npmjs.org/this-package-does-not-exist-sq-98765: Not Found - 404
+
+This error happened while installing a direct dependency of /project/pnpm9
+
+this-package-does-not-exist-sq-98765 is not in the npm registry, or you have no permission to fetch it.
+
+No authorization header was set for the request.

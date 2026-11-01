@@ -1,8 +1,17 @@
-"""Find where logs live, create them, keep them out of git."""
+"""Find where logs live, create them, read them back, keep them out of git."""
 import re
 import time
 from itertools import count
 from pathlib import Path
+
+from .clean import ERROR_RE
+from .stats import measure
+
+MAX_WHOLE_BYTES = 64 * 1024 * 1024
+HEAD_BYTES = 1024 * 1024
+TAIL_BYTES = 8 * 1024 * 1024
+MAX_LINE_BYTES = 64 * 1024
+MAX_MIDDLE_ERRORS = 200
 
 
 def find_root(start=None):
@@ -38,3 +47,33 @@ def open_log(root, command):
             return path, path.open("xb")
         except FileExistsError:
             pass
+
+
+def read_for_squeezing(path):
+    """Returns (text, (lines, characters) of the whole log).
+
+    A log too big to hold in memory comes back as its start, the error lines from
+    its middle, and its end, which is where tools print their results.
+    """
+    size = path.stat().st_size
+    if size <= MAX_WHOLE_BYTES:
+        text = path.read_bytes().decode("utf-8", "replace")
+        return text, measure(text)
+
+    errors = {}
+    tail_start = size - TAIL_BYTES
+    with path.open("rb") as f:
+        head = f.read(HEAD_BYTES)
+        lines = head.count(b"\n")
+        while f.tell() < tail_start:
+            line = f.readline(MAX_LINE_BYTES)
+            lines += line.endswith(b"\n")
+            if len(errors) < MAX_MIDDLE_ERRORS:
+                text = line.decode("utf-8", "replace").rstrip("\n")
+                if ERROR_RE.search(text):
+                    errors[text] = None
+        # Carry on from where the loop stopped: the last line it read can cross tail_start.
+        tail = f.read()
+    note = f"… log too large to read whole, showing up to {MAX_MIDDLE_ERRORS} error lines from its middle …"
+    text = "\n".join([head.decode("utf-8", "replace"), note, *errors, tail.decode("utf-8", "replace")])
+    return text, (lines + tail.count(b"\n"), size)

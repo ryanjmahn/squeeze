@@ -45,6 +45,22 @@ FIXTURE_RUNS = {
     "vitest_only_broken_suite": (1, ["vitest", "run", "src/broken.test.js"]),
     "vitest_grouped_errors": (1, ["vitest", "run"]),
     "vitest_unhandled_error": (1, ["vitest", "run"]),
+    # Older or alternative versions of the same tools.
+    "npm_v9_deprecated": (0, ["npm", "install", "request"]),
+    "npm_v9_404": (1, ["npm", "install", "nope"]),
+    "pnpm_v9_success": (0, ["pnpm", "add", "request"]),
+    "pnpm_v9_404": (1, ["pnpm", "add", "nope"]),
+    "yarn_berry_success": (0, ["yarn", "add", "request"]),
+    "yarn_berry_404": (1, ["yarn", "add", "nope"]),
+    "uv_pip_success": (0, ["uv", "pip", "install", "requests"]),
+    "uv_pip_already": (0, ["uv", "pip", "install", "requests"]),
+    "uv_pip_not_found": (1, ["uv", "pip", "install", "nope"]),
+    "tsc_v50_errors": (2, ["tsc"]),
+    "tsc_v50_errors_pretty": (2, ["tsc", "--pretty"]),
+    "jest_v29_failures": (1, ["jest"]),
+    "jest_v29_passed": (0, ["jest", "src/pass.test.js"]),
+    "vitest_v3_failures": (1, ["vitest", "run"]),
+    "vitest_v3_passed": (0, ["vitest", "run", "src/pass.test.js"]),
 }
 
 # These have no parsable result, so they must reach the generic squeezer.
@@ -144,9 +160,35 @@ class NpmTest(unittest.TestCase):
         self.assertIn("this-package-does-not-exist-sq-98765: Not found", failure)
         self.assertNotIn("cli.js", failure)
 
+    def test_yarn_2_and_later(self):
+        self.assertEqual(
+            run("yarn_berry_success").split("\n")[0],
+            "✓ 49 packages were added to the project (+ 5.55 MiB). · Done with warnings in 0s 784ms",
+        )
+        self.assertNotIn("YN0085", run("yarn_berry_success"))
+        self.assertIn("Package not found", run("yarn_berry_404"))
+        self.assertIn("Response Code: 404", run("yarn_berry_404"))
+
+    def test_older_npm_and_pnpm(self):
+        self.assertIn("⚠ 3 deprecated packages — hidden", run("npm_v9_deprecated"))
+        self.assertNotIn("npm WARN", run("npm_v9_deprecated"))
+        self.assertIn("this-package-does-not-exist-sq-98765", run("npm_v9_404"))
+        self.assertNotIn("A complete log", run("npm_v9_404"))
+        self.assertTrue(run("pnpm_v9_success").startswith("✓ Packages: +48 · Done in 905ms"))
+        self.assertNotIn("+ request", run("pnpm_v9_success"))
+        self.assertIn("⚠ 3 deprecated packages — hidden", run("pnpm_v9_success"))
+        self.assertIn("this-package-does-not-exist-sq-98765", run("pnpm_v9_404"))
+
     def test_unrecognized_lines_survive(self):
         result = npm.squeeze("added 1 package in 1s\nsomething new we never saw", 0)
         self.assertIn("something new we never saw", result)
+
+    def test_a_scripts_own_output_is_never_mistaken_for_noise(self):
+        output = "- step failed: missing header\n+ retrying with 2 workers\n    at build (scripts/build.js:9:3)\n"
+        result = npm.squeeze(output, 1)
+        self.assertIn("- step failed: missing header", result)
+        self.assertIn("+ retrying with 2 workers", result)
+        self.assertIn("scripts/build.js:9:3", result)
 
     def test_yarn_peer_warnings_are_not_counted_as_deprecations(self):
         line = 'warning " > react-dom@18.3.1" has unmet peer dependency "react@^18.3.1".'
@@ -195,6 +237,19 @@ class PipTest(unittest.TestCase):
         self.assertIn("error: could not find libfoo headers", result)
         self.assertIn("finished with status 'error'", result)
         self.assertNotIn("started", result)
+
+    def test_lines_starting_with_b_are_not_mistaken_for_progress(self):
+        # Regression: an old progress-bar pattern matched anything starting with "B".
+        for line in ("Build failed: no compiler", "BUG: broken wheel", "MB limit exceeded"):
+            with self.subTest(line):
+                self.assertIn(line, pip.squeeze(f"{line}\n", 1))
+
+    def test_uv(self):
+        self.assertEqual(run("uv_pip_success"), "✓ Installed 12 packages in 9ms")
+        self.assertEqual(run("uv_pip_already"), "✓ Checked 2 packages in 3ms")
+        result = run("uv_pip_not_found")
+        self.assertIn("No solution found when resolving dependencies", result)
+        self.assertIn("this-package-does-not-exist-sq-98765", result)
 
     def test_a_failed_install_never_reports_satisfied_requirements(self):
         output = "Requirement already satisfied: idna\nERROR: Cannot install x\n"
@@ -265,6 +320,19 @@ class TscTest(unittest.TestCase):
         self.assertNotIn("level 2", result)
         self.assertIn("7 more lines in the log", result)
 
+    def test_thousands_of_errors_are_capped_with_a_count_per_file(self):
+        output = "\n".join(
+            f"src/{'big' if n % 4 else 'small'}.ts({n},1): error TS2304: Cannot find name 'x{n}'." for n in range(1, 1001)
+        )
+        result = tsc.squeeze(output, 1)
+        self.assertTrue(result.startswith("1000 errors in 2 files\n"))
+        self.assertLess(len(result.split("\n")), 60)
+        self.assertIn("… 950 more errors in the log: src/big.ts ×712, src/small.ts ×238", result)
+
+    def test_older_typescript(self):
+        self.assertTrue(run("tsc_v50_errors").startswith("8 errors in 2 files\n"))
+        self.assertEqual(run("tsc_v50_errors_pretty"), run("tsc_v50_errors"))
+
     def test_a_pretty_count_mismatch_goes_to_generic(self):
         output = re.sub(r"^.*TS2339.*$", "", squeezers.clean(load("tsc_errors_pretty")), flags=re.MULTILINE)
         with self.assertRaises(ValueError):
@@ -316,11 +384,21 @@ class JestTest(unittest.TestCase):
             with self.subTest(name):
                 result = run(name)
                 self.assertNotIn("noise from a passing test", result)
-                # The newline matters: the failing source line legitimately quotes this text.
-                self.assertNotIn("debug: inside failing test\n", result)
                 self.assertNotIn("case 12", result)
                 self.assertNotIn("jest-resolve", result)
-                self.assertIn("(console output hidden, see log)", result)
+
+    def test_console_output_from_failing_files_is_shown(self):
+        for name in ("jest_failures", "jest_failures_verbose", "jest_v29_failures"):
+            with self.subTest(name):
+                self.assertIn(
+                    "console output from failing files:\n  src/fail.test.js\n    debug: inside failing test",
+                    run(name),
+                )
+
+    def test_older_jest_parses_the_same(self):
+        self.assertEqual(run("jest_v29_failures").count("✗"), run("jest_failures").count("✗"))
+        self.assertIn("Expected: 3\n    Received: -1", run("jest_v29_failures"))
+        self.assertRegex(run("jest_v29_passed"), r"^✓ tests: 30 passed, 30 total in [\d.]+ s$")
 
     def test_verbose_matches_plain_failures(self):
         self.assertEqual(run("jest_failures_verbose").count("✗"), run("jest_failures").count("✗"))
@@ -389,10 +467,22 @@ class VitestTest(unittest.TestCase):
 
     def test_noise_is_dropped(self):
         result = run("vitest_failures")
-        self.assertNotIn("debug: inside failing test\n", result)
+        self.assertNotIn("noise from a passing test", result)
         self.assertNotIn("RUN", result)
         self.assertNotIn("⎯", result)
-        self.assertIn("(console output hidden, see log)", result)
+
+    def test_console_output_from_failing_files_is_shown(self):
+        for name in ("vitest_failures", "vitest_v3_failures"):
+            with self.subTest(name):
+                self.assertIn(
+                    "console output from failing files:\n  src/fail.test.js\n    debug: inside failing test",
+                    run(name),
+                )
+
+    def test_older_vitest_parses_the_same(self):
+        self.assertEqual(run("vitest_v3_failures").count("✗"), run("vitest_failures").count("✗"))
+        self.assertIn("AssertionError: expected -1 to be 3", run("vitest_v3_failures"))
+        self.assertRegex(run("vitest_v3_passed"), r"^✓ tests: 30 passed, 30 total in \S+$")
 
     def test_pass_is_one_line(self):
         self.assertEqual(run("vitest_filtered_pass"), "✓ tests: 30 passed, 30 total in 63ms")

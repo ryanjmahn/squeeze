@@ -1,0 +1,11 @@
+➤ YN0000: · Yarn 4.18.1
+➤ YN0000: ┌ Resolution step
+➤ YN0085: │ + lodash@npm:4.18.1, request@npm:2.88.2, ajv@npm:6.15.0, asn1@npm:0.2.6, assert-plus@npm:1.0.0, asynckit@npm:0.4.0, aws-sign2@npm:0.7.0, aws4@npm:1.13.2, and 41 more.
+➤ YN0000: └ Completed in 0s 568ms
+➤ YN0000: ┌ Fetch step
+➤ YN0013: │ 49 packages were added to the project (+ 5.55 MiB).
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Link step
+➤ YN0092: │ ESM support for PnP uses the experimental loader API and is therefore experimental
+➤ YN0000: └ Completed
+➤ YN0000: · Done with warnings in 0s 784ms

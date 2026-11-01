@@ -1,4 +1,6 @@
+import io
 import os
+import pty
 import signal
 import subprocess
 import sys
@@ -6,6 +8,9 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
+
+from squeeze import runner
 
 PROJECT = Path(__file__).resolve().parent.parent
 ENV = {**os.environ, "PYTHONPATH": str(PROJECT)}
@@ -94,9 +99,10 @@ class SqTest(unittest.TestCase):
         child = py("import time; print('started', flush=True); time.sleep(30); print('fin' + 'ished')")
         for sig in (signal.SIGINT, signal.SIGTERM):
             with self.subTest(sig=sig):
+                # A new session has no terminal, so this signal is sq's alone to pass on.
                 proc = subprocess.Popen(
                     [*SQ, *child], cwd=self.dir, env=ENV, stdin=subprocess.DEVNULL,
-                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, start_new_session=True,
                 )
                 self.addCleanup(proc.kill)
                 self.addCleanup(proc.stdout.close)
@@ -105,6 +111,81 @@ class SqTest(unittest.TestCase):
                 proc.send_signal(sig)
                 self.assertEqual(proc.wait(timeout=10), 128 + sig)
                 self.assertNotIn(b"finished", log.read_bytes())
+
+    def test_piped_stdin_reaches_the_command(self):
+        result = subprocess.run(
+            [*SQ, "cat"], cwd=self.dir, env=ENV, capture_output=True, input=b"from the pipe\n",
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn(b"from the pipe", result.stdout)
+
+    def run_in_terminal(self, child, *, piped_stdin=False, ctrl_c=True):
+        """Run sq in a real pseudo-terminal. Returns (exit code, log text)."""
+        before = set(self.logs())
+        pipe_read, pipe_write = os.pipe()
+        pid, fd = pty.fork()
+        if pid == 0:
+            os.chdir(self.dir)
+            if piped_stdin:
+                os.dup2(pipe_read, 0)
+            os.execve(sys.executable, [sys.executable, *SQ[1:], *child], ENV)
+        os.close(pipe_read)
+        self.addCleanup(os.close, pipe_write)
+        self.addCleanup(os.close, fd)
+        if ctrl_c:
+            self.wait_for_started_log(before)
+            os.write(fd, b"\x03")
+        # A pty's output has to be drained or the writer can block.
+        try:
+            while os.read(fd, 4096):
+                pass
+        except OSError:
+            pass
+        _, status = os.waitpid(pid, 0)
+        log = (set(self.logs()) - before).pop()
+        return os.waitstatus_to_exitcode(status), log.read_text()
+
+    COUNTS_SIGINTS = (
+        "import signal, sys, time\n"
+        "seen = [0]\n"
+        "def handler(*_):\n"
+        "    seen[0] += 1\n"
+        "    print('sigint', seen[0], flush=True)\n"
+        "signal.signal(signal.SIGINT, handler)\n"
+        "print('started', flush=True)\n"
+        "time.sleep(1)\n"
+        "sys.exit(7)\n"
+    )
+
+    def test_ctrl_c_at_a_terminal_reaches_the_child_once(self):
+        for piped_stdin in (False, True):
+            with self.subTest(piped_stdin=piped_stdin):
+                code, log = self.run_in_terminal(py(self.COUNTS_SIGINTS), piped_stdin=piped_stdin)
+                self.assertEqual(code, 7)
+                self.assertEqual(log.count("sigint"), 1)
+
+    def test_a_prompt_at_a_terminal_fails_instead_of_hanging(self):
+        code, log = self.run_in_terminal(py("input('Continue? ')"), ctrl_c=False)
+        self.assertEqual(code, 1)
+        self.assertIn("EOFError", log)
+
+    def test_silence_gets_one_notice(self):
+        log_path = self.dir / "quiet.log"
+        stderr = io.StringIO()
+        with log_path.open("xb") as log_file, mock.patch.object(runner, "STALL_NOTICE_SECONDS", 0.1), \
+                mock.patch.object(sys, "stderr", stderr):
+            code = runner.run(py("import time; time.sleep(0.5)"), log_file)
+        self.assertEqual(code, 0)
+        self.assertEqual(stderr.getvalue().count("may be waiting for input"), 1)
+
+    def test_steady_output_gets_no_notice(self):
+        log_path = self.dir / "busy.log"
+        stderr = io.StringIO()
+        child = py("import time\nfor _ in range(10):\n    print('x', flush=True)\n    time.sleep(0.05)")
+        with log_path.open("xb") as log_file, mock.patch.object(runner, "STALL_NOTICE_SECONDS", 0.2), \
+                mock.patch.object(sys, "stderr", stderr):
+            runner.run(child, log_file)
+        self.assertEqual(stderr.getvalue(), "")
 
     def wait_for_started_log(self, before):
         deadline = time.monotonic() + 10

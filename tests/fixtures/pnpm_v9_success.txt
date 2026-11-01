@@ -1,0 +1,12 @@
+Progress: resolved 1, reused 0, downloaded 0, added 0
+ WARN  deprecated request@2.88.2: request has been deprecated, see https://github.com/request/request/issues/3142
+ WARN  2 deprecated subdependencies found: har-validator@5.1.5, uuid@3.4.0
+Packages: +48
+++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 48, reused 0, downloaded 48, added 48, done
+
+dependencies:
++ lodash 4.18.1
++ request 2.88.2 deprecated
+
+Done in 905ms using pnpm v9.15.9

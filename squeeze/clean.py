@@ -6,12 +6,23 @@ ERROR_RE = re.compile(r"error|fail|exception|fatal", re.IGNORECASE)
 # CSI sequences (colors, cursor moves), OSC sequences (titles, links), then lone two-byte escapes.
 _ANSI_RE = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\)|[@-Z\\-_])")
 _NUMBER_RE = re.compile(r"0x[0-9a-fA-F]+|\d+")
+_BACKSPACE_RE = re.compile(r"[^\n\x08]\x08")
+
+
+def _apply_backspaces(text):
+    # Spinners draw with "|\b/\b-\b": each backspace erases the character before it.
+    while "\x08" in text:
+        text, erased = _BACKSPACE_RE.subn("", text)
+        if not erased:
+            return text.replace("\x08", "")
+    return text
 
 
 def clean(raw):
     """Remove ANSI codes and overwritten progress-bar text. Returns the lines as one string."""
+    text = _apply_backspaces(_ANSI_RE.sub("", raw))
     # \r moves the cursor back so the next write overwrites the line; only the last write was ever visible.
-    lines = (line.rstrip("\r").rsplit("\r", 1)[-1].rstrip() for line in _ANSI_RE.sub("", raw).split("\n"))
+    lines = (line.rstrip("\r").rsplit("\r", 1)[-1].rstrip() for line in text.split("\n"))
     return "\n".join(lines).rstrip("\n")
 
 
@@ -42,7 +53,13 @@ def render_run(line, count):
 
 
 def trim(line, limit=300):
-    return line if len(line) <= limit else f"{line[:limit]}…"
+    return line if len(line) <= limit else f"{line[:limit]}… (+{len(line) - limit} chars in the log)"
+
+
+def last_lines(lines, count=5):
+    if len(lines) <= count:
+        return lines
+    return [f"… {len(lines) - count} earlier lines in the log …", *lines[-count:]]
 
 
 def cap_error_lines(lines, limit=15):

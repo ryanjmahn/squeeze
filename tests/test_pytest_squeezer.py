@@ -23,6 +23,11 @@ EXIT_CODES = {
     "pytest_keyboard_interrupt": 2,
     "pytest_subtests_failed": 1,
     "pytest_subtests_passed": 0,
+    "pytest_cov_with_failures": 1,
+    "pytest_cov_threshold_only": 1,
+    "pytest_cov_passing": 0,
+    "pytest_v8_failures": 1,
+    "pytest_v8_passed": 0,
     "pytest_all_passed": 0,
     "pytest_collection_error": 2,
     "pytest_collection_import_error": 2,
@@ -115,10 +120,30 @@ class ParsedFailuresTest(unittest.TestCase):
         self.assertIn("✗ tests/test_api.py::test_uses_client (setup error)", result)
         self.assertIn("ConnectionError: database is down", result)
 
-    def test_captured_output_is_pointed_to_not_shown(self):
-        result = direct("pytest_failures")
-        self.assertIn("(Captured stdout call hidden, see log)", result)
-        self.assertNotIn("noise from the test", result)
+    def test_what_a_failing_test_printed_is_shown(self):
+        self.assertIn(
+            "    assert 429 == 200\n    Captured stdout call:\n      noise from the test\n",
+            direct("pytest_failures"),
+        )
+
+    def test_long_captured_output_keeps_only_its_end(self):
+        printed = "\n".join(f"print {n}" for n in range(100))
+        output = (
+            "=== FAILURES ===\n___ test_x ___\nE   assert False\n"
+            f"--- Captured stdout call ---\n{printed}\n"
+            "=== short test summary info ===\nFAILED a.py::test_x - assert False\n=== 1 failed in 0.1s ===\n"
+        )
+        result = pytest.squeeze(output, 1)
+        self.assertIn("print 99", result)
+        self.assertIn("95 earlier lines in the log", result)
+        self.assertNotIn("print 50", result)
+
+    def test_older_pytest_parses_the_same(self):
+        result = direct("pytest_v8_failures")
+        self.assertTrue(result.startswith("6 failed, 40 passed, 1 skipped, 1 xfailed, 40 warnings, 1 error in"))
+        self.assertEqual(result.count("✗"), direct("pytest_failures").count("✗"))
+        self.assertIn('auth/tokens.py:5  return token["expires_at"] + 1\n    KeyError: \'expires_at\'', result)
+        self.assertRegex(direct("pytest_v8_passed"), r"^✓ 60 passed in [\d.]+s$")
 
     def test_warnings_become_one_line(self):
         self.assertIn(
@@ -136,8 +161,18 @@ class ParsedFailuresTest(unittest.TestCase):
             with self.subTest(name):
                 self.assertIn("KeyError: 'expires_at'", direct(name))
 
-    def test_native_tracebacks_keep_the_end_of_each_block(self):
-        self.assertIn("KeyError: 'expires_at'", direct("pytest_failures_tb_native"))
+    def test_native_tracebacks_are_parsed_too(self):
+        result = direct("pytest_failures_tb_native")
+        self.assertIn(
+            "✗ tests/test_auth.py::test_refresh_token\n"
+            '    tests/test_auth.py:6  assert refresh({"token": "abc"}) == 2\n'
+            '    auth/tokens.py:5  return token["expires_at"] + 1\n'
+            "    KeyError: 'expires_at'\n",
+            result,
+        )
+        self.assertNotIn("site-packages", result)
+        self.assertNotIn("pluggy", result)
+        self.assertLess(len(result), len(load("pytest_failures_tb_native")) / 3)
 
     def test_failed_subtests_keep_their_path_and_parameters(self):
         result = direct("pytest_subtests_failed")
@@ -195,6 +230,24 @@ class NeverHideAFailureTest(unittest.TestCase):
         # A coverage plugin does exactly this: all tests pass, exit 1.
         self.assert_refuses("pytest_all_passed", exit_code=1)
         self.assertNotIn("✓", run("pytest_all_passed", exit_code=1))
+
+    def test_coverage_threshold_failure_is_explained_and_not_a_pass(self):
+        result = direct("pytest_cov_threshold_only")
+        self.assertRegex(result, r"^60 passed in [\d.]+s\nFAIL Required test coverage of 90% not reached")
+        self.assertNotIn("✓", result)
+
+    def test_coverage_failure_shows_alongside_failed_tests(self):
+        output = load("pytest_failures").replace(
+            "=========================== short test summary info",
+            "FAIL Required test coverage of 90% not reached. Total coverage: 12.00%\n"
+            "=========================== short test summary info",
+        )
+        result = pytest.squeeze(squeezers.clean(output), 1)
+        self.assertIn("FAIL Required test coverage of 90% not reached", result)
+        self.assertIn("✗ tests/test_auth.py::test_refresh_token", result)
+
+    def test_reached_coverage_stays_quiet(self):
+        self.assertNotIn("coverage", direct("pytest_cov_with_failures").lower())
 
     def test_a_fake_section_cannot_lose_a_failure(self):
         # A test printed "=== fake section ===", which ends the FAILURES section early.
