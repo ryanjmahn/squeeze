@@ -5,7 +5,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import logs, runner
+from . import logs, runner, squeezers, stats
 
 USAGE = "usage: sq <command> [args...]\n"
 
@@ -34,17 +34,25 @@ def main(argv=None):
         code = runner.run(argv, log_file)
     elapsed = time.monotonic() - start
 
+    out = sys.stdout.buffer
     try:
-        out = sys.stdout.buffer
-        # shortcut: prints the whole log until squeezers exist (milestone 2).
-        with log_path.open("rb") as f:
-            shutil.copyfileobj(f, out)
-        summary = f"\n🍋 {Path(argv[0]).name} · exit {code} · {elapsed:.1f}s\nfull log: {os.path.relpath(log_path)}\n"
-        out.write(summary.encode())
+        # shortcut: loads the whole log into memory, stream it if multi-GB logs show up.
+        raw = log_path.read_bytes().decode("utf-8", "replace")
+        body = squeezers.squeeze(argv, raw, code).rstrip("\n")
+        # shortcut: the "after" count skips the header and footer, so it reads about 3 lines low.
+        header = f"🍋 {Path(argv[0]).name} · exit {code} · {elapsed:.1f}s · {stats.summary(raw, body)}"
+        footer = f"full log: {os.path.relpath(log_path)}"
+        report = "\n\n".join(part for part in (header, body, footer) if part) + "\n"
+        out.write(report.encode("utf-8", "replace"))
         out.flush()
     except BrokenPipeError:
         # `sq cmd | head` closed our stdout. Keep the exit code; silence the flush at shutdown.
         os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+    except Exception as e:
+        print(f"sq: could not squeeze, showing the raw log: {e}", file=sys.stderr)
+        with log_path.open("rb") as f:
+            shutil.copyfileobj(f, out)
+        out.flush()
     return code
 
 

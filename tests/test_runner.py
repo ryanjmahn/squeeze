@@ -52,7 +52,7 @@ class SqTest(unittest.TestCase):
         result = self.sq(*py(code))
         expected = b"<stdout>\n<stderr>\n<stdout>\n"
         self.assertEqual(self.logs()[0].read_bytes(), expected)
-        self.assertTrue(result.stdout.startswith(expected))
+        self.assertIn(expected, result.stdout)
 
     def test_binary_output_survives(self):
         result = self.sq(*py(r"import sys; sys.stdout.buffer.write(b'\xff\xfe')"))
