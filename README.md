@@ -4,6 +4,8 @@
 
 A log squeezer for coding agents.
 
+**[ryanjmahn.github.io/squeeze](https://ryanjmahn.github.io/squeeze/)**
+
 [![Stars](https://img.shields.io/github/stars/ryanjmahn/squeeze?style=flat&color=black)](https://github.com/ryanjmahn/squeeze/stargazers)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-black.svg)](https://www.python.org)
 [![Dependencies: none](https://img.shields.io/badge/Dependencies-none-black.svg)](pyproject.toml)
