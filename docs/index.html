@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Squeeze: a log squeezer for coding agents</title>
+<meta name="description" content="Squeeze wraps noisy commands so your coding agent reads the failures, not the noise. Same exit code, full log saved.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23F7E733' d='M3 18c1-7 7-12 14-12 3 0 5 1 7 2l3-2 1 4c2 3 2 7 0 10-3 5-8 8-14 7-3 0-5-1-7-3l-3 1 1-4c-1-1-2-2-2-3z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --night: #0e0e0a;
+  --panel: #17170f;
+  --line: #2f2f25;
+  --ink: #f5f5ec;
+  --muted: #a4a493;
+  --paper: #f5f3ea;
+  --paper-line: #d9d6c8;
+  --paper-ink: #16160f;
+  --paper-muted: #66655a;
+  --lemon: #f7e733;
+  --red: #ff8a75;
+  --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --sans: "Geist", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --gutter: 16px;
+}
+@media (min-width: 720px) { :root { --gutter: 40px; } }
+* { box-sizing: border-box; }
+html { background: var(--night); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; color: var(--ink); background: var(--night); font: 400 17px/1.6 var(--sans); overflow-x: clip; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--lemon); outline-offset: 3px; }
+.paper :focus-visible, .promise :focus-visible { outline-color: var(--paper-ink); }
+.wrap { width: 100%; max-width: 1240px; margin: 0 auto; padding: 0 var(--gutter); }
+.skip { position: absolute; left: -999px; }
+.skip:focus { left: 16px; top: 16px; background: var(--lemon); color: var(--night); padding: 8px 12px; z-index: 10; }
+h1, h2, h3, p { margin: 0; }
+h1, h2 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.015em; }
+h1 { font-size: clamp(58px, 10.5vw, 148px); line-height: 0.94; }
+h1 em, h2 em { font-style: italic; color: var(--lemon); }
+h2 { font-size: clamp(42px, 6vw, 80px); line-height: 1; }
+h3 { font: 500 19px/1.3 var(--sans); letter-spacing: -0.01em; }
+code { font: 400 0.86em var(--mono); }
+.label { font: 500 12px/1.3 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+/* Nav */
+.top { position: absolute; inset: 0 0 auto; z-index: 3; }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 72px; }
+.brand { display: inline-flex; align-items: center; gap: 9px; font: 400 27px/1 var(--serif); text-decoration: none; }
+.brand svg { width: 22px; height: 22px; flex: none; }
+.top nav { display: flex; align-items: center; gap: 28px; font-size: 14px; }
+.top nav a { color: var(--muted); text-decoration: none; }
+.top nav a:hover { color: var(--ink); }
+.top nav a.source { color: var(--night); background: var(--ink); padding: 7px 13px; border-radius: 6px; font-weight: 500; }
+.top nav a.source:hover { background: var(--lemon); color: var(--night); }
+@media (max-width: 640px) { .top nav a:not(.source) { display: none; } }
+
+/* Hero: the stream of log lines runs behind the page */
+.hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; overflow: hidden; }
+#flow { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero-copy { position: relative; z-index: 2; flex: none; padding-top: clamp(104px, 15vh, 164px); text-align: center; }
+.lede { max-width: 33em; margin: 24px auto 0; color: var(--muted); font-size: clamp(17px, 1.6vw, 20px); line-height: 1.5; }
+.install { display: flex; align-items: center; gap: 10px; width: fit-content; max-width: 100%; margin: 28px auto 0; padding: 5px 5px 5px 15px; background: rgba(23, 23, 15, .86); backdrop-filter: blur(6px); border: 1px solid var(--line); border-radius: 9px; text-align: left; }
+.install code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; font-size: 13.5px; scrollbar-width: none; }
+.install code::before { content: "$ "; color: var(--muted); }
+button { font: inherit; cursor: pointer; }
+.copy { flex: none; min-width: 70px; padding: 8px 13px; border: 0; border-radius: 6px; background: var(--lemon); color: var(--night); font-weight: 600; font-size: 14px; }
+.copy:hover { background: #fff27a; }
+.flow-labels { position: absolute; z-index: 2; left: 0; right: 0; bottom: 26px; pointer-events: none; }
+.flow-labels .wrap { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+.flow-labels .right { text-align: right; }
+.flow-labels b { display: block; margin-top: 4px; font: 400 clamp(22px, 3vw, 34px)/1 var(--mono); letter-spacing: -0.03em; color: var(--ink); text-transform: none; }
+.flow-labels .right b { color: var(--lemon); }
+.scroll-cue { align-self: flex-end; padding-bottom: 4px; }
+@media (max-width: 640px) { .scroll-cue { display: none; } }
+
+/* The demo: pinned while you scroll, and the scroll drives the squeeze */
+.demo { position: relative; height: 340vh; background: var(--night); }
+.stage { position: sticky; top: 0; height: 100svh; min-height: 560px; display: flex; flex-direction: column; padding: 18px 0; overflow: hidden; }
+.stage > .wrap { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 14px; }
+@media (min-width: 960px) {
+  .stage { padding: 32px 0; }
+  .stage > .wrap { grid-template-columns: minmax(0, 4.3fr) minmax(0, 7.7fr); grid-template-rows: minmax(0, 1fr); gap: 56px; align-items: stretch; }
+}
+.readout { display: flex; flex-direction: column; min-width: 0; }
+.readout h2 { font-size: clamp(32px, 4.4vw, 60px); }
+.caption { min-height: 3.2em; margin-top: 12px; color: var(--muted); font-size: 15.5px; line-height: 1.45; }
+.tabs { display: flex; gap: 2px; margin-top: 16px; padding: 3px; width: fit-content; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+.tabs button { padding: 5px 12px; border: 0; border-radius: 5px; background: none; color: var(--muted); font: 500 13px/1.4 var(--mono); }
+.tabs button:hover { color: var(--ink); }
+.tabs button[aria-pressed="true"] { background: var(--lemon); color: var(--night); }
+.meters { display: none; margin-top: auto; padding-top: 20px; }
+@media (min-width: 960px) { .meters { display: block; } }
+.meter + .meter { margin-top: 18px; }
+.meter b { display: block; margin-top: 3px; font: 400 clamp(38px, 5vw, 66px)/1 var(--mono); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.meter .sub { margin-left: 8px; font: 400 15px var(--mono); letter-spacing: 0; color: var(--muted); }
+.term { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #070705; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.term-bar { flex: none; display: flex; justify-content: space-between; gap: 12px; padding: 11px 15px; border-bottom: 1px solid var(--line); font: 12.5px/1.3 var(--mono); color: var(--muted); white-space: nowrap; }
+.term-bar span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.term-bar .counts { color: var(--ink); font-variant-numeric: tabular-nums; }
+.screen { position: relative; flex: 1; min-height: 0; }
+/* The canvas covers the whole stage, so dissolving lines can leave the terminal. */
+#squeeze { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+.stage > .wrap { position: relative; }
+.readout { position: relative; z-index: 2; }
+.term-bar, .progress { z-index: 2; }
+.term-bar { position: relative; }
+#final { position: absolute; inset: 0; z-index: 2; margin: 0; padding: 14px 15px; overflow: auto; opacity: 0; font: 400 clamp(11.5px, 1vw, 13px)/1.5 var(--mono); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+#final .head { color: var(--lemon); font-weight: 700; }
+#final .bad { color: var(--red); font-weight: 500; }
+#final .dim { color: var(--muted); }
+.progress { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--lemon); transform-origin: left; transform: scaleX(0); }
+.demo.static { height: auto; }
+.demo.static .stage { position: static; height: auto; padding: 72px 0; }
+.demo.static .term { height: 620px; }
+
+/* Light sections */
+.paper { background: var(--paper); color: var(--paper-ink); }
+.paper .label { color: var(--paper-muted); }
+.paper h2 em { color: var(--paper-ink); }
+section { padding: clamp(72px, 10vw, 136px) 0; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; }
+@media (min-width: 900px) { .split { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 72px; } }
+.split > div > p { margin-top: 18px; max-width: 26em; }
+.paper .split > div > p { color: var(--paper-muted); }
+
+.steps { list-style: none; margin: 0; padding: 0; }
+.steps li { display: grid; grid-template-columns: 44px minmax(0, 1fr); padding: 24px 0; border-top: 1px solid var(--paper-line); }
+.steps li:last-child { border-bottom: 1px solid var(--paper-line); }
+.steps .n { font: 500 13px/1.9 var(--mono); color: var(--paper-muted); }
+.steps h3 { font: 500 clamp(17px, 1.7vw, 21px)/1.35 var(--mono); letter-spacing: -0.03em; overflow-wrap: anywhere; }
+.steps p { margin-top: 7px; color: var(--paper-muted); }
+.steps code { color: var(--paper-ink); overflow-wrap: anywhere; }
+
+.tools { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 40px; margin-top: 64px; }
+@media (min-width: 620px) { .tools { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1040px) { .tools { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.tools div { padding: 20px 0; border-top: 1px solid var(--paper-line); }
+.tools p { margin-top: 5px; font-size: 15.5px; color: var(--paper-muted); }
+
+/* Dark panel plus light panel, side by side */
+.proof { display: grid; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 980px) { .proof { grid-template-columns: minmax(0, 5fr) minmax(0, 8fr); } }
+.proof-copy { padding: clamp(56px, 8vw, 104px) 48px clamp(56px, 8vw, 104px) max(var(--gutter), calc((100vw - 1240px) / 2 + var(--gutter))); background: var(--night); }
+@media (max-width: 979px) { .proof-copy { padding-right: var(--gutter); } }
+.big { margin-top: 44px; font: 400 clamp(40px, 5vw, 64px)/1 var(--mono); letter-spacing: -0.05em; }
+.big .to { color: var(--muted); font-size: 0.6em; padding: 0 .1em; }
+.big em { font-style: normal; color: var(--lemon); }
+.big-note { margin-top: 10px; font-size: 14.5px; color: var(--muted); max-width: 24em; }
+.proof-table { padding: clamp(40px, 6vw, 88px) var(--gutter); background: var(--paper); color: var(--paper-ink); }
+@media (min-width: 980px) { .proof-table { padding-left: 56px; padding-right: max(var(--gutter), calc((100vw - 1240px) / 2 + var(--gutter))); } }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+caption { text-align: left; color: var(--paper-muted); padding-bottom: 18px; font-size: 14.5px; }
+th { text-align: left; padding: 0 16px 10px 0; font: 500 12px/1.3 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper-muted); }
+td { padding: 12px 16px 12px 0; border-top: 1px solid var(--paper-line); vertical-align: middle; }
+td.num { font: 13.5px/1.3 var(--mono); white-space: nowrap; }
+td code { font-size: 13.5px; }
+th:last-child, td:last-child { padding-right: 0; }
+.left { width: 26%; }
+.track { display: block; height: 7px; background: var(--paper-line); border-radius: 4px; }
+.track i { display: block; height: 100%; min-width: 4px; background: var(--paper-ink); border-radius: 4px; }
+@media (max-width: 640px) { .left { display: none; } }
+
+.promise { position: relative; overflow: hidden; background: var(--lemon); color: var(--night); padding-bottom: clamp(150px, 19vw, 260px); }
+.promise .wrap { position: relative; z-index: 1; }
+.promise canvas, .end canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.promise h2 { font-size: clamp(50px, 9vw, 128px); line-height: .94; max-width: 8em; }
+.promise h2 em { color: var(--night); }
+.promise ul { list-style: none; margin: 72px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 28px 40px; }
+.promise li { border-top: 1.5px solid var(--night); padding-top: 13px; }
+.promise h3 { font-weight: 600; }
+.promise p { margin-top: 6px; font-size: 15.5px; }
+
+.card-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: end; margin-bottom: 44px; }
+@media (min-width: 900px) { .card-head { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 72px; } }
+.card-head p { color: var(--muted); }
+.card-wrap { position: relative; }
+.card-frame { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 14px; }
+.tag { display: inline-block; margin-top: 18px; padding: 4px 10px; border: 1px solid var(--lemon); border-radius: 999px; font: 500 12.5px/1.4 var(--mono); color: var(--lemon); }
+
+.faq details { border-top: 1px solid var(--paper-line); padding: 18px 0; }
+.faq details:last-child { border-bottom: 1px solid var(--paper-line); }
+.faq summary { position: relative; padding-right: 36px; cursor: pointer; list-style: none; font: 500 18px/1.3 var(--sans); letter-spacing: -0.01em; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; position: absolute; right: 2px; top: -3px; font: 400 24px/1.2 var(--mono); color: var(--paper-muted); transition: transform .2s; }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq details p { margin-top: 10px; color: var(--paper-muted); max-width: 40em; }
+
+.end { position: relative; overflow: hidden; display: flex; align-items: center; min-height: 86svh; text-align: center; }
+.end .wrap { position: relative; z-index: 1; padding-bottom: 19vh; }
+.end h2 { font-size: clamp(56px, 10vw, 148px); line-height: .94; }
+/* Sections ease in as you reach them. Added by script, so nothing stays hidden without it. */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity .8s cubic-bezier(.2, .7, .2, 1), transform .8s cubic-bezier(.2, .7, .2, 1); }
+.reveal.in { opacity: 1; transform: none; }
+footer { border-top: 1px solid var(--line); padding: 26px 0 34px; font-size: 14px; color: var(--muted); }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 32px; }
+footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#main">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#F7E733" d="M3 18c1-7 7-12 14-12 3 0 5 1 7 2l3-2 1 4c2 3 2 7 0 10-3 5-8 8-14 7-3 0-5-1-7-3l-3 1 1-4c-1-1-2-2-2-3z"/></svg>
+      Squeeze
+    </a>
+    <nav aria-label="Main">
+      <a href="#demo">Demo</a>
+      <a href="#how">How it works</a>
+      <a href="#numbers">Numbers</a>
+      <a href="#faq">FAQ</a>
+      <a class="source" href="https://github.com/ryanjmahn/squeeze">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="hero">
+    <canvas id="flow" aria-hidden="true"></canvas>
+    <div class="hero-copy wrap">
+      <h1>Your agent doesn't<br>need <em>the whole log.</em></h1>
+      <p class="lede">Squeeze wraps the noisy commands your coding agent runs. It keeps the failures and the exit code, saves the full log to disk, and drops the rest.</p>
+      <div class="install">
+        <code id="install-1">pipx install git+https://github.com/ryanjmahn/squeeze</code>
+        <button class="copy" type="button" data-copy="install-1">Copy</button>
+      </div>
+    </div>
+    <div class="flow-labels" aria-hidden="true">
+      <div class="wrap">
+        <div class="label">Raw output<b id="flow-before"></b></div>
+        <div class="label scroll-cue">Scroll to squeeze ↓</div>
+        <div class="label right">Your agent reads<b id="flow-after"></b></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo" id="demo">
+    <div class="stage" id="stage">
+      <canvas id="squeeze" aria-hidden="true"></canvas>
+      <div class="wrap">
+        <div class="readout">
+          <h2 id="demo-title">Scroll to squeeze.</h2>
+          <p class="caption" id="demo-caption">This is real tool output. Keep scrolling, and watch what happens to it.</p>
+          <div class="tabs" role="group" aria-label="Choose a tool"></div>
+          <div class="meters">
+            <div class="meter"><span class="label">Tokens your agent reads (est.)</span><b><span id="meter-tokens"></span><span class="sub" id="meter-tokens-from"></span></b></div>
+            <div class="meter"><span class="label">Lines</span><b><span id="meter-lines"></span><span class="sub" id="meter-lines-from"></span></b></div>
+          </div>
+        </div>
+        <div class="term">
+          <div class="term-bar">
+            <span id="term-cmd"></span>
+            <span class="counts" id="term-counts"></span>
+          </div>
+          <div class="screen" id="screen">
+            <pre id="final" tabindex="0"></pre>
+          </div>
+          <div class="progress" id="progress"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="paper" id="how">
+    <div class="wrap">
+      <div class="split">
+        <div>
+          <span class="label">How it works</span>
+          <h2 style="margin-top:14px">Three steps, then <em>forget about it.</em></h2>
+          <p>Test output and install spam fill the context window, so your agent burns tokens and forgets earlier work sooner. Piping to <code>tail</code> saves tokens, but it can cut off the actual error.</p>
+        </div>
+        <ol class="steps">
+          <li><span class="n">01</span><div><h3>pipx install git+…/squeeze</h3><p>Puts <code>sq</code> on your <code>PATH</code> everywhere, which is what an agent needs.</p></div></li>
+          <li><span class="n">02</span><div><h3>sq init &gt;&gt; CLAUDE.md</h3><p>Adds a short note telling your agent to run noisy commands through <code>sq</code>.</p></div></li>
+          <li><span class="n">03</span><div><h3>sq pytest</h3><p>Prints the summary and the failures. If that isn't enough, the agent reads the saved log instead of running the command again.</p></div></li>
+        </ol>
+      </div>
+      <div class="tools">
+        <div><h3>Squeezers per tool</h3><p>pytest, jest, vitest, npm, pnpm, yarn, pip, uv pip, and tsc, each tested on what they really print.</p></div>
+        <div><h3>A fallback for the rest</h3><p>Any other command keeps its first and last lines, and every line that looks like an error or warning.</p></div>
+        <div><h3>Short output stays short</h3><p>When there's nothing to hide, you get a one-line header and the output.</p></div>
+        <div><h3>Pipes and raw mode</h3><p><code>sq -s "cd api &amp;&amp; pytest"</code> runs shell strings. <code>sq --raw</code> shows normal output live and still saves the log.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="proof" id="numbers">
+    <div class="proof-copy">
+      <span class="label">Real numbers</span>
+      <h2 style="margin-top:14px">The weak ones <em>are in here too.</em></h2>
+      <p class="big"><span>~3.2k</span><span class="to"> → </span><em>~44</em></p>
+      <p class="big-note">Estimated tokens for <code>pytest -v</code> on a real project, all passing.</p>
+    </div>
+    <div class="proof-table">
+      <table>
+        <caption>Measured on sample and real projects, counting what Squeeze adds. Tokens are estimated as characters ÷ 4. Yours will differ.</caption>
+        <thead><tr><th scope="col">Run</th><th scope="col">Tokens</th><th scope="col" class="left">What's left</th></tr></thead>
+        <tbody>
+          <tr><td><code>pytest -v</code>, all passing, a real project</td><td class="num">~3.2k → ~44</td><td class="left"><span class="track"><i style="width:1.4%"></i></span></td></tr>
+          <tr><td><code>pytest -v</code>, all passing</td><td class="num">~1.3k → ~38</td><td class="left"><span class="track"><i style="width:2.9%"></i></span></td></tr>
+          <tr><td><code>jest</code>, all passing, noisy logs</td><td class="num">~737 → ~42</td><td class="left"><span class="track"><i style="width:5.7%"></i></span></td></tr>
+          <tr><td><code>pip install flask</code></td><td class="num">~409 → ~46</td><td class="left"><span class="track"><i style="width:11.2%"></i></span></td></tr>
+          <tr><td><code>pytest -v</code>, 7 failures</td><td class="num">~3.0k → ~496</td><td class="left"><span class="track"><i style="width:16.5%"></i></span></td></tr>
+          <tr><td><code>jest --verbose</code>, 5 failures</td><td class="num">~1.4k → ~402</td><td class="left"><span class="track"><i style="width:28.7%"></i></span></td></tr>
+          <tr><td><code>tsc --pretty</code>, 8 errors</td><td class="num">~616 → ~220</td><td class="left"><span class="track"><i style="width:35.7%"></i></span></td></tr>
+          <tr><td><code>vitest run</code>, 5 failures</td><td class="num">~776 → ~420</td><td class="left"><span class="track"><i style="width:54.1%"></i></span></td></tr>
+          <tr><td><code>npm install</code></td><td class="num">~64 → ~53</td><td class="left"><span class="track"><i style="width:82.8%"></i></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <section class="promise">
+    <canvas id="flow-promise" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <h2>Squeezing never <em>hides a failure.</em></h2>
+      <ul>
+        <li><h3>The exit code is exact</h3><p>If <code>pytest</code> exits 1, <code>sq pytest</code> exits 1.</p></li>
+        <li><h3>A confused squeezer gives up</h3><p>If it crashes or counts different failures than the tool reported, a blunter squeezer takes over, and then the raw output.</p></li>
+        <li><h3>A ✓ means exit 0</h3><p>A coverage threshold that fails a run where every test passed shows the reason, never a ✓.</p></li>
+        <li><h3>Unknown lines stay</h3><p>Install squeezers drop known noise, so a format they've never seen still gets shown.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="card-head">
+        <div>
+          <span class="label">sq stats · sq card</span>
+          <h2 style="margin-top:14px">Log squeezes <em>like workouts.</em></h2>
+        </div>
+        <div>
+          <p>Tokens saved, streaks, personal records, and badges in your terminal. <code>sq card</code> makes a card like this one for your GitHub profile.</p>
+          <span class="tag" id="card-label">Example card, made-up numbers</span>
+        </div>
+      </div>
+      <img class="card-frame" src="card.svg" width="1200" height="630" alt="An example Squeeze stats card with made-up numbers: tokens saved, a weekly bar chart, top tools, personal records, and badges.">
+    </div>
+  </section>
+
+  <section class="paper faq" id="faq">
+    <div class="wrap split">
+      <h2>Questions</h2>
+      <div>
+        <details><summary>Could it hide the error my agent needs?</summary><p>It's built not to: exit codes pass through, failure counts are checked against the tool's own totals, and the full log is always saved. If a summary falls short, the agent can read the log or use <code>sq --raw</code>.</p></details>
+        <details><summary>What does it store?</summary><p><code>~/.squeeze/history.jsonl</code> holds command names, the repo's folder name, and numbers, never arguments or output. Logs hold the full output, including any secrets a command prints, so they stay in a gitignored <code>.squeeze/</code> folder. Nothing is uploaded.</p></details>
+        <details><summary>Does it work with agents other than Claude Code?</summary><p><code>sq</code> is an ordinary command, so any agent that can run shell commands can use it. <code>sq init</code> prints the instructions, which you can paste wherever your agent reads them. It's mainly been tried with Claude Code so far.</p></details>
+        <details><summary>Will it save tokens on every command?</summary><p>No. It saves the most on noisy test runs and installs. Short commands add a one-line header, so they can cost a few tokens.</p></details>
+        <details><summary>Are the token counts exact?</summary><p>No, they're estimates: characters divided by 4. Real token counting is on the <a href="https://github.com/ryanjmahn/squeeze/blob/main/docs/roadmap.md">roadmap</a>.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="end">
+    <canvas id="flow-end" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <h2>Start <em>squeezing.</em></h2>
+      <div class="install">
+        <code id="install-2">pipx install git+https://github.com/ryanjmahn/squeeze</code>
+        <button class="copy" type="button" data-copy="install-2">Copy</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Free. Python 3.10+. No dependencies. Built by <a href="https://github.com/ryanjmahn">@ryanjmahn</a></span>
+    <nav aria-label="Footer">
+      <a href="https://github.com/ryanjmahn/squeeze">GitHub</a>
+      <a href="https://github.com/ryanjmahn/squeeze/blob/main/docs/usage.md">Usage</a>
+      <a href="https://github.com/ryanjmahn/squeeze/blob/main/docs/squeezers.md">Squeezers</a>
+      <a href="https://github.com/ryanjmahn/squeeze/blob/main/docs/roadmap.md">Roadmap</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="demo-data.js"></script>
+<script>
+(function () {
+  var COLORS = { noise: "#77776a", text: "#a4a493", lemon: "#f7e733" };
+  var MONO = "'Geist Mono', ui-monospace, Menlo, monospace";
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var data = window.SQUEEZE_DEMO;
+  var clamp = function (v) { return Math.min(1, Math.max(0, v)); };
+  var lerp = function (a, b, t) { return a + (b - a) * t; };
+  var ease = function (t) { return t * t * (3 - 2 * t); };
+  var compact = function (n) { return n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(Math.round(n)); };
+  // A stable pseudo-random number per index, so the scrubbed animation runs the same in both directions.
+  var hash = function (n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+  function fitCanvas(canvas) {
+    var ratio = Math.min(window.devicePixelRatio || 1, 2);
+    var box = canvas.getBoundingClientRect();
+    canvas.width = Math.round(box.width * ratio);
+    canvas.height = Math.round(box.height * ratio);
+    var context = canvas.getContext("2d");
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    return { context: context, width: box.width, height: box.height };
+  }
+
+  // ---- The stream: log lines pour into a throat, and only what matters comes out the other side.
+  // It means the same thing wherever it appears on the page.
+  function startStream(canvas, options) {
+    var size = fitCanvas(canvas);
+    var visible = false;
+    var pointerY = null;
+    var throatY = 0;
+    var particles = [];
+    var THROAT_X = options.throatX || 0.52;
+
+    function center() { return size.height * options.center; }
+
+    function seed() {
+      var count = Math.round((size.width < 700 ? 420 : 1300) * (options.density || 1));
+      particles = [];
+      for (var i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * size.width,
+          lane: Math.pow(Math.random(), 0.8) * (Math.random() < 0.5 ? -1 : 1),
+          speed: 0.5 + Math.random() * 1.1,
+          length: 5 + Math.random() * 26,
+          kept: Math.random() < 0.06,
+          phase: Math.random() * 6.28
+        });
+      }
+    }
+
+    function squeezeAt(x) {
+      var distance = (x - size.width * THROAT_X) / (size.width * 0.17);
+      return Math.exp(-distance * distance);
+    }
+
+    function draw(time) {
+      var c = size.context, w = size.width, h = size.height;
+      c.clearRect(0, 0, w, h);
+      var target = pointerY === null ? center() : lerp(center(), pointerY, 0.14);
+      throatY += (target - throatY) * 0.05;
+      var tx = w * THROAT_X;
+      var spread = Math.min(h * options.spread, 260);
+      if (options.glow) {
+        // The throat is where the product happens, so it's the one bright point in the stream.
+        var glow = c.createRadialGradient(tx, throatY, 0, tx, throatY, spread * 1.2);
+        glow.addColorStop(0, options.glow);
+        glow.addColorStop(1, "rgba(247, 231, 51, 0)");
+        c.fillStyle = glow;
+        c.fillRect(tx - spread * 1.2, throatY - spread * 1.2, spread * 2.4, spread * 2.4);
+      }
+      particles.forEach(function (p) {
+        var squeeze = squeezeAt(p.x);
+        var halfHeight = lerp(spread * (p.x > tx ? 0.55 : 1), spread * 0.03, squeeze);
+        var y = throatY + p.lane * halfHeight + Math.sin(time * 0.0006 + p.phase) * 5 * (1 - squeeze);
+        var past = (p.x - tx) / (w * 0.035);
+        var through = p.kept && p.x > tx;
+        if (p.kept) {
+          c.globalAlpha = lerp(0.5, 1, clamp(past + 1));
+          c.fillStyle = through ? options.keptColor : options.noiseColor;
+        } else {
+          var fade = 1 - clamp(past);
+          if (fade <= 0) return;
+          c.globalAlpha = options.noiseAlpha * fade * clamp(p.x / (w * 0.08) + 0.15);
+          c.fillStyle = options.noiseColor;
+        }
+        c.fillRect(p.x, y, through ? p.length * 1.4 : p.length, through ? 2.25 : 1.25);
+      });
+      c.globalAlpha = 1;
+    }
+
+    function step(time) {
+      if (visible) {
+        particles.forEach(function (p) {
+          // Things speed up through a narrow gap.
+          p.x += p.speed * (1 + 1.8 * squeezeAt(p.x));
+          if (p.x > size.width + 40) { p.x = -40; p.lane = Math.pow(Math.random(), 0.8) * (Math.random() < 0.5 ? -1 : 1); }
+        });
+        draw(time);
+      }
+      requestAnimationFrame(step);
+    }
+
+    window.addEventListener("resize", function () { size = fitCanvas(canvas); seed(); if (reduced) draw(0); });
+    throatY = center();
+    seed();
+    if (reduced) { draw(0); return; }
+    if (options.followPointer) {
+      canvas.parentElement.addEventListener("pointermove", function (e) {
+        if (e.pointerType === "mouse") pointerY = e.clientY - canvas.getBoundingClientRect().top;
+      });
+      canvas.parentElement.addEventListener("pointerleave", function () { pointerY = null; });
+    }
+    new IntersectionObserver(function (entries) { visible = entries[0].isIntersecting; }).observe(canvas);
+    requestAnimationFrame(step);
+  }
+
+  document.getElementById("flow-before").textContent = data[0].linesBefore + " lines";
+  document.getElementById("flow-after").textContent = data[0].linesAfter + " lines";
+  var mobile = window.innerWidth < 700;
+  startStream(document.getElementById("flow"), {
+    center: mobile ? 0.8 : 0.76, spread: mobile ? 0.14 : 0.21, noiseColor: COLORS.noise, keptColor: COLORS.lemon,
+    noiseAlpha: 0.8, glow: "rgba(247, 231, 51, 0.09)", followPointer: true
+  });
+  startStream(document.getElementById("flow-promise"), {
+    center: 0.88, spread: 0.11, noiseColor: "#14140f", keptColor: "#14140f", noiseAlpha: 0.42, density: 0.6
+  });
+  startStream(document.getElementById("flow-end"), {
+    center: 0.72, spread: 0.2, noiseColor: COLORS.noise, keptColor: COLORS.lemon,
+    noiseAlpha: 0.7, glow: "rgba(247, 231, 51, 0.07)", density: 0.75, followPointer: true
+  });
+
+  // ---- The demo: scrolling drives everything, so it runs backward as well as forward.
+  (function demo() {
+    var section = document.getElementById("demo");
+    var canvas = document.getElementById("squeeze");
+    var stageEl = document.getElementById("stage");
+    var screenEl = document.getElementById("screen");
+    var final = document.getElementById("final");
+    var title = document.getElementById("demo-title");
+    var caption = document.getElementById("demo-caption");
+    var tabs = document.querySelector(".tabs");
+    var size = null;
+    var current = data[0];
+    var shown = reduced ? 1 : 0;
+    var lastDrawn = -1;
+    var keptCount = 0;
+    var STAGES = [
+      [0, "Scroll to squeeze.", "This is real tool output, and all of it would land in your agent's context. Keep scrolling."],
+      [0.14, "Now zoom out.", "Each bar is a line of output. Almost none of it helps your agent fix anything."],
+      [0.3, "The noise goes.", "Passing tests, progress, and repeats dissolve. The lines that matter turn lemon."],
+      [0.68, "What's left comes together.", "Only the lines that matter, with the exit code unchanged."],
+      [0.92, "That's the real output.", "This is what sq prints. The full log is still on disk, if your agent needs it."]
+    ];
+
+    function escapeHtml(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+    function renderFinal() {
+      var body = escapeHtml(current.body).split("\n").map(function (line) {
+        if (line.indexOf("✗") === 0) return '<span class="bad">' + line + "</span>";
+        if (line.indexOf("⚠") === 0) return '<span class="dim">' + line + "</span>";
+        return line;
+      }).join("\n");
+      final.innerHTML = '<span class="head">' + escapeHtml(current.header) + "</span>\n\n" + body +
+        '\n\n<span class="dim">full log: .squeeze/logs/…</span>';
+    }
+
+    function choose(index) {
+      current = data[index];
+      keptCount = current.kept.reduce(function (sum, kept) { return sum + kept; }, 0);
+      tabs.querySelectorAll("button").forEach(function (button, i) { button.setAttribute("aria-pressed", String(i === index)); });
+      document.getElementById("term-cmd").textContent = "$ sq " + current.command;
+      document.getElementById("meter-tokens-from").textContent = "from ~" + compact(current.tokensBefore);
+      document.getElementById("meter-lines-from").textContent = "from " + current.linesBefore;
+      renderFinal();
+      lastDrawn = -1;
+      if (reduced) draw(1);
+    }
+
+    function draw(p) {
+      var c = size.context;
+      var stageBox = stageEl.getBoundingClientRect();
+      var box = screenEl.getBoundingClientRect();
+      var ox = box.left - stageBox.left, oy = box.top - stageBox.top;
+      var W = box.width, H = box.height;
+      c.clearRect(0, 0, size.width, size.height);
+      c.save();
+      c.translate(ox, oy);
+      var pad = 14;
+      var n = current.raw.length;
+      var readable = 16;
+      var zoom = ease(clamp(p / 0.26));
+      var L = lerp(readable, Math.min(readable, (H - pad * 2) / n), zoom);
+      var textAlpha = 1 - clamp(zoom * 2.4);
+      var barAlpha = clamp(zoom * 2.4 - 0.5);
+      var dissolve = clamp((p - 0.3) / 0.38);
+      var gather = ease(clamp((p - 0.68) / 0.22));
+      var finalLine = Math.min(19, (H - pad * 2) / Math.max(keptCount, 1));
+      var maxChars = W / 6.1;
+      var rawFont = "400 " + Math.max(9, L * 0.72).toFixed(1) + "px " + MONO;
+      var sideways = ox > 120;
+
+      // First the lines that are breaking up. They're free to leave the terminal, so they drift
+      // out behind the numbers on a wide screen, and up behind the heading on a phone.
+      c.fillStyle = COLORS.noise;
+      current.raw.forEach(function (text, i) {
+        if (current.kept[i]) return;
+        var local = clamp((dissolve - hash(i) * 0.62) / 0.38);
+        var length = Math.min(text.length, maxChars);
+        if (local <= 0 || local >= 1 || length <= 0) return;
+        var y = pad + i * L;
+        var barWidth = (length / maxChars) * (W - pad * 2);
+        var pieces = Math.min(6, 1 + Math.floor(length / 13));
+        var travel = Math.pow(local, 1.7);
+        c.globalAlpha = Math.pow(1 - local, 1.3) * 0.9;
+        for (var k = 0; k < pieces; k++) {
+          var r = hash(i * 13 + k), s = hash(i * 29 + k + 7);
+          var x = pad + barWidth * ((k + r) / pieces);
+          var drift = Math.sin(local * 5 + r * 6.28) * 16 * local + (s - 0.5) * 170 * travel;
+          var yy = y + drift;
+          if (sideways) x -= travel * (W * 0.45 + s * (ox + W * 0.3));
+          else yy -= travel * (oy + s * H * 0.5);
+          c.fillRect(x, yy, lerp(barWidth / pieces, 3 + s * 4, clamp(local * 3)), Math.max(1, L * 0.55));
+        }
+      });
+
+      // Then everything that stays inside the terminal.
+      c.beginPath();
+      c.rect(0, 0, W, H);
+      c.clip();
+      c.font = rawFont;
+      c.textBaseline = "top";
+      var order = 0;
+      current.raw.forEach(function (text, i) {
+        var y = pad + i * L;
+        var length = Math.min(text.length, maxChars);
+        var barWidth = (length / maxChars) * (W - pad * 2);
+        var barHeight = Math.max(1, L * 0.55);
+        if (!current.kept[i]) {
+          if (clamp((dissolve - hash(i) * 0.62) / 0.38) > 0 || y > H) return;
+          if (textAlpha > 0) { c.globalAlpha = textAlpha; c.fillStyle = COLORS.text; c.fillText(text, pad, y); }
+          if (barAlpha > 0 && barWidth > 0) { c.globalAlpha = barAlpha * 0.62; c.fillStyle = COLORS.noise; c.fillRect(pad, y, barWidth, barHeight); }
+          return;
+        }
+        var targetY = pad + order * finalLine;
+        order++;
+        var yy = lerp(y, targetY, gather);
+        if (yy > H) return;
+        if (textAlpha > 0) { c.globalAlpha = textAlpha; c.fillStyle = COLORS.text; c.fillText(text, pad, yy); }
+        var lit = clamp(dissolve * 3);
+        if (barAlpha > 0) {
+          c.globalAlpha = barAlpha * lerp(0.62, 1, lit) * (1 - clamp((gather - 0.5) * 2));
+          c.fillStyle = lit > 0.5 ? COLORS.lemon : COLORS.noise;
+          c.fillRect(pad, yy, barWidth, Math.max(1.5, lerp(barHeight, 3, gather)));
+        }
+        if (gather > 0.5) {
+          c.globalAlpha = (gather - 0.5) * 2;
+          c.font = "400 12px " + MONO;
+          c.fillStyle = COLORS.lemon;
+          c.fillText(text.replace(/^(E|>)\s+/, "").trim().slice(0, Math.floor(W / 7.4)), pad, yy);
+          c.font = rawFont;
+        }
+      });
+      c.restore();
+
+      var reveal = clamp((p - 0.9) / 0.08);
+      canvas.style.opacity = String(1 - reveal);
+      final.style.opacity = String(reveal);
+      final.style.pointerEvents = reveal > 0.5 ? "auto" : "none";
+
+      var done = ease(clamp((p - 0.3) / 0.6));
+      var tokens = lerp(current.tokensBefore, current.tokensAfter, done);
+      var lines = lerp(current.linesBefore, current.linesAfter, done);
+      document.getElementById("meter-tokens").textContent = "~" + compact(tokens);
+      document.getElementById("meter-lines").textContent = String(Math.round(lines));
+      document.getElementById("term-counts").textContent = Math.round(lines) + " lines · ~" + compact(tokens) + " tokens";
+      document.getElementById("progress").style.transform = "scaleX(" + p + ")";
+
+      var stage = STAGES[0];
+      STAGES.forEach(function (candidate) { if (p >= candidate[0]) stage = candidate; });
+      if (title.textContent !== stage[1]) { title.textContent = stage[1]; caption.textContent = stage[2]; }
+    }
+
+    data.forEach(function (scenario, i) {
+      var button = document.createElement("button");
+      button.type = "button";
+      button.textContent = scenario.label;
+      button.addEventListener("click", function () { choose(i); });
+      tabs.appendChild(button);
+    });
+
+    function measure() { size = fitCanvas(canvas); lastDrawn = -1; if (reduced) draw(1); }
+
+    function scrollProgress() {
+      var box = section.getBoundingClientRect();
+      var travel = box.height - window.innerHeight;
+      return travel > 0 ? clamp(-box.top / travel) : 1;
+    }
+
+    function tick() {
+      var target = scrollProgress();
+      shown += (target - shown) * 0.16;
+      if (Math.abs(target - shown) < 0.0006) shown = target;
+      if (shown !== lastDrawn) { draw(shown); lastDrawn = shown; }
+      requestAnimationFrame(tick);
+    }
+
+    if (reduced) section.classList.add("static");
+    size = fitCanvas(canvas);
+    choose(0);
+    window.addEventListener("resize", measure);
+    // Canvas text can't reflow when the web font arrives, so draw it again.
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { lastDrawn = -1; if (reduced) draw(1); });
+    if (reduced) measure(); else requestAnimationFrame(tick);
+  })();
+
+  if (!reduced && window.IntersectionObserver) {
+    var watcher = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) { entry.target.classList.add("in"); watcher.unobserve(entry.target); }
+      });
+    }, { rootMargin: "0px 0px -8% 0px" });
+    document.querySelectorAll(
+      ".split > *, .tools > div, .steps li, .proof-copy > *, .proof-table, .promise h2, .promise li, .card-head > div, .card-frame, .faq details, .end h2, .end .install"
+    ).forEach(function (element) {
+      var position = Array.prototype.indexOf.call(element.parentElement.children, element);
+      element.classList.add("reveal");
+      element.style.transitionDelay = Math.min(position * 70, 280) + "ms";
+      watcher.observe(element);
+    });
+  }
+
+  document.querySelectorAll(".copy").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var text = document.getElementById(button.dataset.copy).textContent;
+      function done(label) {
+        button.textContent = label;
+        setTimeout(function () { button.textContent = "Copy"; }, 1600);
+      }
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function () { done("Copied"); }, function () { done("Failed"); });
+      } else {
+        done("Failed");
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

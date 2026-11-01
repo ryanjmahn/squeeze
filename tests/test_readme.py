@@ -1,4 +1,5 @@
 """The README makes promises a reader will copy and paste, so hold it to them."""
+import importlib.util
 import re
 import unittest
 from pathlib import Path
@@ -55,6 +56,42 @@ class ReadmeTest(unittest.TestCase):
                         headings = re.findall(r"(?m)^#+ (.+)$", linked.read_text())
                         slugs = [re.sub(r"[^\w -]", "", h).strip().lower().replace(" ", "-") for h in headings]
                         self.assertIn(anchor, slugs)
+
+
+class SiteTest(unittest.TestCase):
+    PAGE = (ROOT / "docs" / "index.html").read_text()
+
+    def test_local_files_it_references_exist(self):
+        for target in re.findall(r'(?:src|href)="(?!https?:|#|data:)([^"]+)"', self.PAGE):
+            self.assertTrue((ROOT / "docs" / target).exists(), target)
+
+    def test_in_page_links_have_targets(self):
+        for target in re.findall(r'href="#([^"]+)"', self.PAGE):
+            self.assertIn(f'id="{target}"', self.PAGE)
+
+    def test_the_demo_data_matches_what_the_squeezers_really_do(self):
+        # If this fails, a squeezer changed: run `PYTHONPATH=. python3 scripts/build_demo.py`.
+        spec = importlib.util.spec_from_file_location("build_demo", ROOT / "scripts" / "build_demo.py")
+        build_demo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(build_demo)
+        self.assertEqual((ROOT / "docs" / "demo-data.js").read_text(), build_demo.build())
+
+    def test_the_demo_has_no_personal_paths(self):
+        data = (ROOT / "docs" / "demo-data.js").read_text()
+        self.assertNotIn("/Users/", data)
+        self.assertNotIn("/private/", data)
+
+    def test_the_example_card_is_labelled_until_it_is_real(self):
+        self.assertIn("made-up numbers", self.PAGE)
+        self.assertTrue((ROOT / "docs" / "card.svg").exists())
+
+    def test_it_makes_no_open_source_claim_without_a_license(self):
+        if not list(ROOT.glob("LICENSE*")):
+            self.assertNotIn("open source", self.PAGE.lower())
+
+    def test_personal_paths_never_ship(self):
+        self.assertNotIn("/Users/", self.PAGE)
+        self.assertNotIn("/private/", self.PAGE)
 
 
 if __name__ == "__main__":
