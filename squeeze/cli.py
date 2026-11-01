@@ -7,7 +7,7 @@ import sys
 import time
 from itertools import dropwhile
 
-from . import dashboard, logs, records, runner, squeezers, stats
+from . import card, dashboard, logs, records, runner, squeezers, stats
 
 CLAUDE_SNIPPET = """\
 ## Squeeze (noisy commands)
@@ -21,7 +21,7 @@ CLAUDE_SNIPPET = """\
 def _parser():
     parser = argparse.ArgumentParser(
         prog="sq",
-        usage="sq [--raw] <command> [args...]\n       sq [--raw] -s \"<shell string>\"\n       sq init\n       sq stats [--week | --month | --all] [--repo]\n       sq stats --reset",
+        usage="sq [--raw] <command> [args...]\n       sq [--raw] -s \"<shell string>\"\n       sq init\n       sq stats [--week | --month | --all] [--repo]\n       sq stats --reset\n       sq card [--week | --month | --all]",
         description="Run a command, keep the full log on disk, print only what matters.",
     )
     parser.add_argument("--raw", action="store_true", help="show the normal output instead of squeezing it; the log is still saved")
@@ -146,8 +146,41 @@ def _stats(argv):
     return 0
 
 
+def _card(argv):
+    parser = argparse.ArgumentParser(prog="sq card", description="Make a shareable card of your tokens saved.")
+    period = parser.add_mutually_exclusive_group()
+    period.add_argument("--week", dest="period", action="store_const", const="week", help="this week (the default)")
+    period.add_argument("--month", dest="period", action="store_const", const="month", help="this month")
+    period.add_argument("--all", dest="period", action="store_const", const="all", help="all time")
+    args = parser.parse_args(argv)
+    period = args.period or "week"
+
+    entries = stats.load_history()
+    if not entries:
+        print("No squeezes yet, so there's no card to make. Try: sq pytest")
+        return 0
+
+    root = logs.find_root()
+    svg = card.render_svg(entries, period)
+    cards = root / ".squeeze" / "cards"
+    stem = f"{time.strftime('%Y-%m-%d')}_{period}"
+    try:
+        logs.ensure_gitignored(root)
+        cards.mkdir(parents=True, exist_ok=True)
+        (cards / f"{stem}.html").write_text(card.render_html(svg), encoding="utf-8")
+        (cards / f"{stem}.svg").write_text(svg, encoding="utf-8")
+    except OSError as e:
+        print(f"sq: could not save the card: {e}", file=sys.stderr)
+        return 1
+    print(f"card: {os.path.relpath(cards / f'{stem}.html')}")
+    print(f"svg:  {os.path.relpath(cards / f'{stem}.svg')}")
+    return 0
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["card"]:
+        return _card(argv[1:])
     if argv[:1] == ["init"]:
         print("sq: paste this into your CLAUDE.md (or run: sq init >> CLAUDE.md)", file=sys.stderr)
         sys.stdout.write(CLAUDE_SNIPPET)

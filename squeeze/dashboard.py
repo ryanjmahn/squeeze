@@ -2,6 +2,7 @@
 import calendar
 from collections import defaultdict
 from datetime import date, timedelta
+from types import SimpleNamespace
 
 from . import records
 from .stats import format_compact, saved
@@ -67,28 +68,31 @@ def _sum_saved(entries, first, last):
     return sum(saved(entry) for entry in entries if first <= entry["date"] <= last)
 
 
-def _bars(period, entries, start, end):
-    buckets = _buckets(period, start, end)
-    totals = [_sum_saved(entries, first, last) for _, first, last in buckets]
-    label_width = max(len(label) for label, _, _ in buckets)
-    biggest = max(totals, default=0)
+def _bar_rows(bars):
+    label_width = max(len(label) for label, _ in bars)
+    biggest = max(total for _, total in bars)
     rows = []
-    for (label, _, _), total in zip(buckets, totals):
+    for label, total in bars:
         width = max(1, round(BAR_WIDTH * total / biggest)) if total > 0 else 0
         value = format_compact(total) if total else "—"
         rows.append(f"   {label:<{label_width}} {'▇' * width:<{BAR_WIDTH}}  {value}")
     return rows
 
 
-def _change(entries, name, first, last, current):
-    if name is None:
-        return ""
+def _change(entries, first, last, current):
+    """Percent change from an earlier stretch of days, or None if there's nothing to compare with."""
+    if first is None:
+        return None
     earlier = _sum_saved(entries, first, last)
-    if earlier <= 0:
-        return ""
-    percent = round(100 * (current - earlier) / earlier)
-    arrow = "▲" if percent > 0 else "▼" if percent < 0 else "="
-    return f"{arrow} {abs(percent)}% vs {name}"
+    return round(100 * (current - earlier) / earlier) if earlier > 0 else None
+
+
+def change_arrow(percent):
+    return "▲" if percent > 0 else "▼" if percent < 0 else "="
+
+
+def _rough(n):
+    return f"{n:,.0f}" if n >= 100 else f"{n:.1f}"
 
 
 def equivalents(tokens):
@@ -96,20 +100,21 @@ def equivalents(tokens):
     if tokens >= CONTEXT_WINDOW_TOKENS:
         windows = tokens / CONTEXT_WINDOW_TOKENS
         novels = tokens / NOVEL_TOKENS
-        return f"≈ {windows:.1f} context windows · ≈ {novels:.1f} novels' worth of log spam you didn't read"
+        return f"≈ {_rough(windows)} context windows · ≈ {_rough(novels)} novels' worth of log spam you didn't read"
     if tokens >= PAGE_TOKENS:
         return f"≈ {tokens / PAGE_TOKENS:.0f} pages of log spam you didn't read"
     return ""
 
 
 def _top_tools(entries):
+    """[(tool, percent of tokens saved)], biggest first."""
     totals = defaultdict(int)
     for entry in entries:
         if saved(entry) > 0 and entry["tool"] != "none":
             totals[entry["tool"]] += saved(entry)
     overall = sum(totals.values())
     ranked = sorted(totals.items(), key=lambda item: item[1], reverse=True)[:TOP_TOOLS]
-    return " · ".join(f"{tool} {100 * tokens // overall}%" for tool, tokens in ranked)
+    return [(tool, percent) for tool, tokens in ranked if (percent := 100 * tokens // overall)]
 
 
 def _top_repo(entries):
@@ -124,47 +129,65 @@ def describe_squeeze(entry):
     return f"{entry['command']} · {entry['lines_before']:,} → {entry['lines_after']:,} lines (-{records.squeeze_percent(entry)}%)"
 
 
-def render(entries, period, today=None, repo=None):
+def summarize(entries, period, today=None):
+    """Everything the dashboard and the card show, worked out once."""
     today = today or date.today()
     title, range_label, start, end, compare_name, compare_first, compare_last = _window(period, entries, today)
     if compare_first:
         # Compare with the same point last time: one day of a new month against all of the last says nothing.
         compare_last = min(compare_last, compare_first + (today - start))
-    current =[entry for entry in entries if start <= entry["date"] <= end]
+    current = [entry for entry in entries if start <= entry["date"] <= end]
     total = sum(map(saved, current))
-    commands = sum(not entry["raw"] for entry in current)
+    return SimpleNamespace(
+        title=title,
+        range_label=range_label,
+        total=total,
+        commands=sum(not entry["raw"] for entry in current),
+        compare_name=compare_name,
+        change=_change(entries, compare_first, compare_last, total),
+        streak=records.current_streak(entries, today),
+        bars=[(label, _sum_saved(entries, first, last)) for label, first, last in _buckets(period, start, end)],
+        tools=_top_tools(current),
+        biggest=records.biggest_squeeze(current),
+        top_repo=_top_repo(current),
+        record_biggest=records.biggest_squeeze(entries),
+        record_day=records.best_day(entries),
+        record_streak=records.longest_streak(entries),
+        badges=records.earned_badges(entries),
+    )
 
-    heading = f"🍋 SQUEEZE · {title}" + (f" · {repo}" if repo else "")
-    lines = [f"{heading:<{WIDTH - len(range_label)}}{range_label}", ""]
 
-    streak = records.current_streak(entries, today)
-    change = _change(entries, compare_name, compare_first, compare_last, total)
-    lines.append(f"   {f'{format_compact(total)} tokens saved':<26}{change}".rstrip())
-    noun = "command" if commands == 1 else "commands"
-    lines.append(f"   {f'{commands:,} {noun} squeezed':<26}{f'🔥 {streak}-day streak' if streak else ''}".rstrip())
-    if fun := equivalents(total):
+def format_day_record(day):
+    return f"{_day(day[0])} · {format_compact(day[1])} tokens"
+
+
+def render(entries, period, today=None, repo=None):
+    s = summarize(entries, period, today)
+    heading = f"🍋 SQUEEZE · {s.title}" + (f" · {repo}" if repo else "")
+    lines = [f"{heading:<{WIDTH - len(s.range_label)}}{s.range_label}", ""]
+
+    change = "" if s.change is None else f"{change_arrow(s.change)} {abs(s.change)}% vs {s.compare_name}"
+    noun = "command" if s.commands == 1 else "commands"
+    lines.append(f"   {f'{format_compact(s.total)} tokens saved':<26}{change}".rstrip())
+    lines.append(f"   {f'{s.commands:,} {noun} squeezed':<26}{f'🔥 {s.streak}-day streak' if s.streak else ''}".rstrip())
+    if fun := equivalents(s.total):
         lines.append(f"   {fun}")
     lines.append("")
-    lines.extend(_bars(period, entries, start, end))
+    lines.extend(_bar_rows(s.bars))
 
     details = []
-    if tools := _top_tools(current):
-        details.append(f"   Top tools        {tools}")
-    if best := records.biggest_squeeze(current):
-        details.append(f"   Biggest squeeze  {describe_squeeze(best)} 🏆")
-    if not repo and (top_repo := _top_repo(current)):
-        details.append(f"   Top repo         {top_repo}")
+    if s.tools:
+        details.append(f"   Top tools        {' · '.join(f'{tool} {percent}%' for tool, percent in s.tools)}")
+    if s.biggest:
+        details.append(f"   Biggest squeeze  {describe_squeeze(s.biggest)} 🏆")
+    if not repo and s.top_repo:
+        details.append(f"   Top repo         {s.top_repo}")
     if details:
         lines.extend(["", *details])
 
     lines.extend(["", "   🏆 Personal records"])
-    best = records.biggest_squeeze(entries)
-    day = records.best_day(entries)
-    lines.append(f"   Biggest squeeze  {describe_squeeze(best) if best else '—'}")
-    lines.append(f"   Best day         {f'{_day(day[0])} · {format_compact(day[1])} tokens' if day else '—'}")
-    longest = records.longest_streak(entries)
-    lines.append(f"   Longest streak   {longest} day{'s' if longest != 1 else ''}")
-
-    earned = records.earned_badges(entries)
-    lines.extend(["", f"   🎖 Badges ({len(earned)}/{len(records.BADGES)})  {' · '.join(earned) or '—'}"])
+    lines.append(f"   Biggest squeeze  {describe_squeeze(s.record_biggest) if s.record_biggest else '—'}")
+    lines.append(f"   Best day         {format_day_record(s.record_day) if s.record_day else '—'}")
+    lines.append(f"   Longest streak   {s.record_streak} day{'s' if s.record_streak != 1 else ''}")
+    lines.extend(["", f"   🎖 Badges ({len(s.badges)}/{len(records.BADGES)})  {' · '.join(s.badges) or '—'}"])
     return "\n".join(lines)

@@ -44,6 +44,8 @@ def history_path():
 
 def format_compact(n):
     """Like: 1.24M, 182k, 4.8k, 950."""
+    if abs(n) >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.2f}B"
     if abs(n) >= 1_000_000:
         return f"{n / 1_000_000:.2f}M"
     if abs(n) >= 10_000:
