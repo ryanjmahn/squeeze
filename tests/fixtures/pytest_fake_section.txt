@@ -1,0 +1,30 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.2, pytest-9.2.0, pluggy-1.7.0
+rootdir: /project
+configfile: pytest.ini
+collected 2 items
+
+fake/test_fake.py FF                                                     [100%]
+
+=================================== FAILURES ===================================
+__________________________ test_prints_a_fake_section __________________________
+
+    def test_prints_a_fake_section():
+        print("=== fake section ===")
+>       assert False
+E       assert False
+
+fake/test_fake.py:3: AssertionError
+----------------------------- Captured stdout call -----------------------------
+=== fake section ===
+_________________________ test_after_the_fake_section __________________________
+
+    def test_after_the_fake_section():
+>       assert False
+E       assert False
+
+fake/test_fake.py:6: AssertionError
+=========================== short test summary info ============================
+FAILED fake/test_fake.py::test_prints_a_fake_section - assert False
+FAILED fake/test_fake.py::test_after_the_fake_section - assert False
+============================== 2 failed in 0.02s ===============================

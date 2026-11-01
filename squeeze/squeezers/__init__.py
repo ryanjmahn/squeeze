@@ -5,9 +5,9 @@ squeeze(output, exit_code) -> str, then list it in SQUEEZERS. `command` is the
 argv list; `output` has already been through clean().
 """
 from ..clean import clean
-from . import generic
+from . import generic, pytest
 
-SQUEEZERS = []
+SQUEEZERS = [pytest]
 
 
 def squeeze(command, raw, exit_code):

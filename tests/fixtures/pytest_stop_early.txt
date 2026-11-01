@@ -1,0 +1,21 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.2, pytest-9.2.0, pluggy-1.7.0
+rootdir: /project
+configfile: pytest.ini
+collected 49 items
+
+tests/test_api.py E
+
+==================================== ERRORS ====================================
+______________________ ERROR at setup of test_uses_client ______________________
+
+    @pytest.fixture
+    def client():
+>       raise ConnectionError("database is down")
+E       ConnectionError: database is down
+
+tests/test_api.py:5: ConnectionError
+=========================== short test summary info ============================
+ERROR tests/test_api.py::test_uses_client - ConnectionError: database is down
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.01s ===============================

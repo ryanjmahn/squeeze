@@ -1,0 +1,7 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.2, pytest-9.2.0, pluggy-1.7.0
+rootdir: /project
+configfile: pytest.ini
+collected 60 items / 60 deselected / 0 selected
+
+============================ 60 deselected in 0.01s ============================

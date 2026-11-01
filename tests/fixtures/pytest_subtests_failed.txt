@@ -1,0 +1,35 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.2, pytest-9.2.0, pluggy-1.7.0
+rootdir: /project
+configfile: pytest.ini
+collected 2 items
+
+sub/test_sub.py ..                                                     [100%]
+
+=================================== FAILURES ===================================
+_______________________ T.test_some_subtests_fail (n=2) ________________________
+
+self = <test_sub.T testMethod=test_some_subtests_fail>
+
+    def test_some_subtests_fail(self):
+        for n in range(4):
+            with self.subTest(n=n):
+>               self.assertLess(n, 2)
+E               AssertionError: 2 not less than 2
+
+sub/test_sub.py:7: AssertionError
+_______________________ T.test_some_subtests_fail (n=3) ________________________
+
+self = <test_sub.T testMethod=test_some_subtests_fail>
+
+    def test_some_subtests_fail(self):
+        for n in range(4):
+            with self.subTest(n=n):
+>               self.assertLess(n, 2)
+E               AssertionError: 3 not less than 2
+
+sub/test_sub.py:7: AssertionError
+=========================== short test summary info ============================
+SUBFAILED(n=2) sub/test_sub.py::T::test_some_subtests_fail - AssertionError: ...
+SUBFAILED(n=3) sub/test_sub.py::T::test_some_subtests_fail - AssertionError: ...
+========================= 2 failed, 2 passed in 0.01s ==========================

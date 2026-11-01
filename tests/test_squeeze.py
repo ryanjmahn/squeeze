@@ -162,6 +162,9 @@ class StatsTest(unittest.TestCase):
     def test_nothing_saved_shows_no_percentage(self):
         self.assertEqual(stats.summary("", ""), "0 lines → 0 lines · ~0 → ~0 tokens (est.)")
 
+    def test_one_line_is_singular(self):
+        self.assertIn("10 lines → 1 line (-90%)", stats.summary("x\n" * 10, "y"))
+
     def test_percentage_never_rounds_up_to_100(self):
         self.assertIn("(-99%)", stats.summary("x\n" * 1000, "y\n" * 2))
 

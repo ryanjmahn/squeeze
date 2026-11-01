@@ -1,0 +1,530 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.2, pytest-9.2.0, pluggy-1.7.0
+rootdir: /project
+configfile: pytest.ini
+collected 49 items
+
+tests/test_api.py EFFF                                                   [  8%]
+tests/test_auth.py FFF........................................xs         [100%]
+
+==================================== ERRORS ====================================
+______________________ ERROR at setup of test_uses_client ______________________
+Traceback (most recent call last):
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 361, in from_call
+    result: TResult | None = func()
+                             ~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 250, in <lambda>
+    lambda: runtest_hook(item=item, **kwds),
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/logging.py", line 871, in pytest_runtest_setup
+    yield
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/capture.py", line 901, in pytest_runtest_setup
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 170, in pytest_runtest_setup
+    item.session._setupstate.setup(item)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 536, in setup
+    col.setup()
+    ~~~~~~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 1801, in setup
+    self._request._fillfixtures()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/fixtures.py", line 877, in _fillfixtures
+    item.funcargs[argname] = self.getfixturevalue(argname)
+                             ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/fixtures.py", line 701, in getfixturevalue
+    fixturedef = self._get_active_fixturedef(argname)
+  File "/venv/lib/python3.14/site-packages/_pytest/fixtures.py", line 797, in _get_active_fixturedef
+    fixturedef.execute(request=subrequest)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/fixtures.py", line 1301, in execute
+    result: FixtureValue = ihook.pytest_fixture_setup(
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        fixturedef=self, request=request
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/setuponly.py", line 36, in pytest_fixture_setup
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/fixtures.py", line 1407, in pytest_fixture_setup
+    result = call_fixture_func(fixturefunc, request, kwargs)
+  File "/venv/lib/python3.14/site-packages/_pytest/fixtures.py", line 1074, in call_fixture_func
+    fixture_result = fixturefunc(**kwargs)
+  File "/project/tests/test_api.py", line 5, in client
+    raise ConnectionError("database is down")
+ConnectionError: database is down
+=================================== FAILURES ===================================
+_______________________________ test_rate_limit ________________________________
+Traceback (most recent call last):
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 361, in from_call
+    result: TResult | None = func()
+                             ~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 250, in <lambda>
+    lambda: runtest_hook(item=item, **kwds),
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/logging.py", line 878, in pytest_runtest_call
+    yield
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/capture.py", line 906, in pytest_runtest_call
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/skipping.py", line 268, in pytest_runtest_call
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 184, in pytest_runtest_call
+    item.runtest()
+    ~~~~~~~~~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 1798, in runtest
+    self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 187, in pytest_pyfunc_call
+    result = testfunction(**testargs)
+  File "/project/tests/test_api.py", line 13, in test_rate_limit
+    assert status == 200
+AssertionError: assert 429 == 200
+----------------------------- Captured stdout call -----------------------------
+noise from the test
+________________________________ test_long_diff ________________________________
+Traceback (most recent call last):
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 361, in from_call
+    result: TResult | None = func()
+                             ~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 250, in <lambda>
+    lambda: runtest_hook(item=item, **kwds),
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/logging.py", line 878, in pytest_runtest_call
+    yield
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/capture.py", line 906, in pytest_runtest_call
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/skipping.py", line 268, in pytest_runtest_call
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 184, in pytest_runtest_call
+    item.runtest()
+    ~~~~~~~~~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 1798, in runtest
+    self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 187, in pytest_pyfunc_call
+    result = testfunction(**testargs)
+  File "/project/tests/test_api.py", line 16, in test_long_diff
+    assert {"a": 1, "b": [1, 2, 3], "c": "x" * 50} == {"a": 2, "b": [1, 2, 4], "c": "y" * 50}
+AssertionError: assert {'a': 1, 'b':...xxxxxxxxxxxx'} == {'a': 2, 'b':...yyyyyyyyyyyy'}
+  
+  Differing items:
+  {'c': 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'} != {'c': 'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'}
+  {'a': 1} != {'a': 2}
+  {'b': [1, 2, 3]} != {'b': [1, 2, 4]}
+  Use -v to get more diff
+____________________________ TestThing.test_method _____________________________
+Traceback (most recent call last):
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 361, in from_call
+    result: TResult | None = func()
+                             ~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 250, in <lambda>
+    lambda: runtest_hook(item=item, **kwds),
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/logging.py", line 878, in pytest_runtest_call
+    yield
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/capture.py", line 906, in pytest_runtest_call
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/skipping.py", line 268, in pytest_runtest_call
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 184, in pytest_runtest_call
+    item.runtest()
+    ~~~~~~~~~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 1798, in runtest
+    self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 187, in pytest_pyfunc_call
+    result = testfunction(**testargs)
+  File "/project/tests/test_api.py", line 20, in test_method
+    with pytest.raises(ValueError):
+         ~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/raises.py", line 699, in __exit__
+    fail(f"DID NOT RAISE {self.expected_exceptions[0].__name__}")
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/outcomes.py", line 162, in __call__
+    raise Failed(msg=reason, pytrace=pytrace)
+Failed: DID NOT RAISE ValueError
+______________________________ test_refresh_token ______________________________
+Traceback (most recent call last):
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 361, in from_call
+    result: TResult | None = func()
+                             ~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 250, in <lambda>
+    lambda: runtest_hook(item=item, **kwds),
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/logging.py", line 878, in pytest_runtest_call
+    yield
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/capture.py", line 906, in pytest_runtest_call
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/skipping.py", line 268, in pytest_runtest_call
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 184, in pytest_runtest_call
+    item.runtest()
+    ~~~~~~~~~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 1798, in runtest
+    self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 187, in pytest_pyfunc_call
+    result = testfunction(**testargs)
+  File "/project/tests/test_auth.py", line 6, in test_refresh_token
+    assert refresh({"token": "abc"}) == 2
+           ~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/project/auth/tokens.py", line 5, in refresh
+    return token["expires_at"] + 1
+           ~~~~~^^^^^^^^^^^^^^
+KeyError: 'expires_at'
+_____________________________ test_client_version ______________________________
+Traceback (most recent call last):
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 361, in from_call
+    result: TResult | None = func()
+                             ~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 250, in <lambda>
+    lambda: runtest_hook(item=item, **kwds),
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/logging.py", line 878, in pytest_runtest_call
+    yield
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/capture.py", line 906, in pytest_runtest_call
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/skipping.py", line 268, in pytest_runtest_call
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 184, in pytest_runtest_call
+    item.runtest()
+    ~~~~~~~~~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 1798, in runtest
+    self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 187, in pytest_pyfunc_call
+    result = testfunction(**testargs)
+  File "/project/tests/test_auth.py", line 9, in test_client_version
+    assert parse_client_version("not a version")
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/project/auth/tokens.py", line 8, in parse_client_version
+    return Version(raw)
+  File "/venv/lib/python3.14/site-packages/packaging/version.py", line 452, in __init__
+    raise InvalidVersion(f"Invalid version: {version!r}")
+packaging.version.InvalidVersion: Invalid version: 'not a version'
+_______________________________ test_load_config _______________________________
+Traceback (most recent call last):
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 361, in from_call
+    result: TResult | None = func()
+                             ~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 250, in <lambda>
+    lambda: runtest_hook(item=item, **kwds),
+            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/logging.py", line 878, in pytest_runtest_call
+    yield
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/capture.py", line 906, in pytest_runtest_call
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 167, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/_pytest/skipping.py", line 268, in pytest_runtest_call
+    return (yield)
+            ^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/runner.py", line 184, in pytest_runtest_call
+    item.runtest()
+    ~~~~~~~~~~~~^^
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 1798, in runtest
+    self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_caller.py", line 197, in __call__
+    return self._hookexec(
+           ~~~~~~~~~~~~~~^
+        self.name, self._hookimpls.copy(), call_kwargs, firstresult
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/venv/lib/python3.14/site-packages/pluggy/_manager.py", line 183, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 195, in _multicall
+    raise exception
+  File "/venv/lib/python3.14/site-packages/pluggy/_execution.py", line 147, in _multicall
+    res = hook_impl.function(*args)
+  File "/venv/lib/python3.14/site-packages/_pytest/python.py", line 187, in pytest_pyfunc_call
+    result = testfunction(**testargs)
+  File "/project/tests/test_auth.py", line 12, in test_load_config
+    load_config("{bad json")
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/project/auth/tokens.py", line 11, in load_config
+    return json.loads(text)
+           ~~~~~~~~~~^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 361, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ~~~~~~~~~~~~~~^^^^^^^^
+json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+=============================== warnings summary ===============================
+tests/test_auth.py: 40 warnings
+  /project/utils/dates.py:4: DeprecationWarning: datetime.utcnow() is deprecated
+    warnings.warn("datetime.utcnow() is deprecated", DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_api.py::test_rate_limit - assert 429 == 200
+FAILED tests/test_api.py::test_long_diff - AssertionError: assert {'a': 1, 'b...
+FAILED tests/test_api.py::TestThing::test_method - Failed: DID NOT RAISE Valu...
+FAILED tests/test_auth.py::test_refresh_token - KeyError: 'expires_at'
+FAILED tests/test_auth.py::test_client_version - packaging.version.InvalidVer...
+FAILED tests/test_auth.py::test_load_config - json.decoder.JSONDecodeError: E...
+ERROR tests/test_api.py::test_uses_client - ConnectionError: database is down
+=== 6 failed, 40 passed, 1 skipped, 1 xfailed, 40 warnings, 1 error in 0.03s ===

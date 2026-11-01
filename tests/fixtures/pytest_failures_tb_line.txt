@@ -1,0 +1,48 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.2, pytest-9.2.0, pluggy-1.7.0
+rootdir: /project
+configfile: pytest.ini
+collected 49 items
+
+tests/test_api.py EFFF                                                   [  8%]
+tests/test_auth.py FFF........................................xs         [100%]
+
+==================================== ERRORS ====================================
+______________________ ERROR at setup of test_uses_client ______________________
+E   ConnectionError: database is down
+=================================== FAILURES ===================================
+E   assert 429 == 200
+----------------------------- Captured stdout call -----------------------------
+noise from the test
+/project/tests/test_api.py:13: assert 429 == 200
+E   AssertionError: assert {'a': 1, 'b':...xxxxxxxxxxxx'} == {'a': 2, 'b':...yyyyyyyyyyyy'}
+      
+      Differing items:
+      {'c': 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'} != {'c': 'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'}
+      {'b': [1, 2, 3]} != {'b': [1, 2, 4]}
+      {'a': 1} != {'a': 2}
+      Use -v to get more diff
+/project/tests/test_api.py:16: AssertionError: assert {'a': 1, 'b':...xxxxxxxxxxxx'} == {'a': 2, 'b':...yyyyyyyyyyyy'}
+E   Failed: DID NOT RAISE ValueError
+/project/tests/test_api.py:20: Failed: DID NOT RAISE ValueError
+E   KeyError: 'expires_at'
+/project/auth/tokens.py:5: KeyError: 'expires_at'
+E   packaging.version.InvalidVersion: Invalid version: 'not a version'
+/venv/lib/python3.14/site-packages/packaging/version.py:452: packaging.version.InvalidVersion: Invalid version: 'not a version'
+E   json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py:361: json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+=============================== warnings summary ===============================
+tests/test_auth.py: 40 warnings
+  /project/utils/dates.py:4: DeprecationWarning: datetime.utcnow() is deprecated
+    warnings.warn("datetime.utcnow() is deprecated", DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_api.py::test_rate_limit - assert 429 == 200
+FAILED tests/test_api.py::test_long_diff - AssertionError: assert {'a': 1, 'b...
+FAILED tests/test_api.py::TestThing::test_method - Failed: DID NOT RAISE Valu...
+FAILED tests/test_auth.py::test_refresh_token - KeyError: 'expires_at'
+FAILED tests/test_auth.py::test_client_version - packaging.version.InvalidVer...
+FAILED tests/test_auth.py::test_load_config - json.decoder.JSONDecodeError: E...
+ERROR tests/test_api.py::test_uses_client - ConnectionError: database is down
+=== 6 failed, 40 passed, 1 skipped, 1 xfailed, 40 warnings, 1 error in 0.02s ===

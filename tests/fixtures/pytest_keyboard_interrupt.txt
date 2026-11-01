@@ -1,0 +1,22 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.2, pytest-9.2.0, pluggy-1.7.0
+rootdir: /project
+configfile: pytest.ini
+collected 2 items
+
+interrupt/test_int.py F
+
+=================================== FAILURES ===================================
+_______________________________ test_fails_first _______________________________
+
+    def test_fails_first():
+>       assert False
+E       assert False
+
+interrupt/test_int.py:2: AssertionError
+=========================== short test summary info ============================
+FAILED interrupt/test_int.py::test_fails_first - assert False
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/project/interrupt/test_int.py:5: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+============================== 1 failed in 0.07s ===============================
