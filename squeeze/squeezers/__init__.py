@@ -12,11 +12,14 @@ SQUEEZERS = [npm, pip, pytest, tsc, jest]
 
 
 def squeeze(command, raw, exit_code):
-    """Squeeze raw output. A squeezing bug must never hide a failure, so each step falls back to a blunter one."""
+    """Returns (squeezed text, name of the squeezer that made it).
+
+    A squeezing bug must never hide a failure, so each step falls back to a blunter one.
+    """
     try:
         output = clean(raw)
     except Exception:
-        return raw
+        return raw, "none"
     for squeezer in (*SQUEEZERS, generic):
         try:
             if not squeezer.matches(command, output):
@@ -26,5 +29,5 @@ def squeeze(command, raw, exit_code):
             continue
         # Nothing left from real output means the squeezer misread it.
         if result.strip() or not output.strip():
-            return result
-    return raw
+            return result, squeezer.__name__.rsplit(".", 1)[-1]
+    return raw, "none"

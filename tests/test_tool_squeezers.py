@@ -73,7 +73,7 @@ def load(name):
 
 def run(name):
     exit_code, command = FIXTURE_RUNS[name]
-    return squeezers.squeeze(command, load(name), exit_code)
+    return squeezers.squeeze(command, load(name), exit_code)[0]
 
 
 def is_generic_result(name):
@@ -270,7 +270,7 @@ class PipTest(unittest.TestCase):
                 self.assertFalse(pip.matches(command, ""))
 
     def test_installing_pytest_is_not_a_test_run(self):
-        result = squeezers.squeeze(["pip", "install", "pytest"], "Collecting pytest\nSuccessfully installed pytest-9.2.0\n", 0)
+        result = squeezers.squeeze(["pip", "install", "pytest"], "Collecting pytest\nSuccessfully installed pytest-9.2.0\n", 0)[0]
         self.assertEqual(result, "✓ installed 1 package: pytest-9.2.0")
 
 
@@ -341,10 +341,10 @@ class TscTest(unittest.TestCase):
     def test_failure_without_errors_is_not_a_pass(self):
         with self.assertRaises(ValueError):
             tsc.squeeze("", 1)
-        self.assertNotIn("✓", squeezers.squeeze(["tsc"], "tsc crashed badly\n", 1))
+        self.assertNotIn("✓", squeezers.squeeze(["tsc"], "tsc crashed badly\n", 1)[0])
 
     def test_other_successful_output_is_kept(self):
-        self.assertIn("Version 5", squeezers.squeeze(["tsc", "--version"], "Version 5.9\n", 0))
+        self.assertIn("Version 5", squeezers.squeeze(["tsc", "--version"], "Version 5.9\n", 0)[0])
 
     def test_wrappers_are_recognized_by_their_output(self):
         self.assertTrue(tsc.matches(["make", "types"], load("tsc_errors")))
@@ -432,7 +432,7 @@ class JestTest(unittest.TestCase):
         output = squeezers.clean(load("jest_failures")).split("Test Suites:")[0]
         with self.assertRaises(ValueError):
             jest.squeeze(output, 1)
-        self.assertIn("adds numbers", squeezers.squeeze(["jest"], output, 1))
+        self.assertIn("adds numbers", squeezers.squeeze(["jest"], output, 1)[0])
 
 
 class VitestTest(unittest.TestCase):
@@ -510,7 +510,7 @@ class RoutingTest(unittest.TestCase):
     def test_installing_a_tool_is_an_install(self):
         for package in ("jest", "vitest", "tsc", "pytest"):
             with self.subTest(package):
-                result = squeezers.squeeze(["npm", "install", package], "added 1 package in 1s\n", 0)
+                result = squeezers.squeeze(["npm", "install", package], "added 1 package in 1s\n", 0)[0]
                 self.assertEqual(result, "✓ added 1 package in 1s")
 
     def test_jest_through_npm_is_recognized_by_its_output(self):

@@ -1,5 +1,6 @@
-"""Run a command with all of its output going to a log file."""
+"""Run a command with its output going to a log file."""
 import os
+import selectors
 import signal
 import subprocess
 import sys
@@ -36,8 +37,52 @@ def _wait(proc, log_file):
             size = current
 
 
-def run(argv, log_file):
-    """Run argv, writing stdout and stderr to log_file. Returns a shell-style exit code."""
+def _write_all(fd, data):
+    while data:
+        data = data[os.write(fd, data):]
+
+
+def _tee(proc, log_file):
+    """Copy the command's output to the screen and the log as it arrives, keeping stdout and stderr apart."""
+    log_ok = True
+    with selectors.DefaultSelector() as selector:
+        selector.register(proc.stdout.fileno(), selectors.EVENT_READ, 1)
+        selector.register(proc.stderr.fileno(), selectors.EVENT_READ, 2)
+        while selector.get_map():
+            events = selector.select(timeout=0.1)
+            for key, _ in events:
+                data = os.read(key.fd, 65536)
+                if not data:
+                    selector.unregister(key.fd)
+                    continue
+                try:
+                    if log_ok:
+                        log_file.write(data)
+                        log_file.flush()
+                except OSError as e:
+                    # A full disk shouldn't stop a command the user is watching.
+                    log_ok = False
+                    print(f"sq: log writing stopped: {e}", file=sys.stderr)
+                try:
+                    _write_all(key.data, data)
+                except BrokenPipeError:
+                    # `sq --raw cmd | head` closed. Unwrapped, cmd would get SIGPIPE from the same write.
+                    proc.send_signal(signal.SIGPIPE)
+                except OSError:
+                    pass
+            # A daemon the command left behind can hold the pipes open forever.
+            if not events and proc.poll() is not None:
+                break
+    proc.stdout.close()
+    proc.stderr.close()
+    return proc.wait()
+
+
+def run(argv, log_file, raw=False):
+    """Run argv, saving its output to log_file. Returns a shell-style exit code.
+
+    Normally the output only goes to the log. With raw it also streams to the screen as usual.
+    """
     proc = None
 
     def forward(signum, _frame):
@@ -45,22 +90,31 @@ def run(argv, log_file):
         if proc and (signum == signal.SIGTERM or not _terminal_sent_it()):
             proc.send_signal(signum)
 
+    def could_not_start(code, message):
+        log_file.write(f"{message}\n".encode())
+        if raw:
+            print(message, file=sys.stderr)
+        return code
+
     previous = {s: signal.signal(s, forward) for s in (signal.SIGINT, signal.SIGTERM)}
     try:
-        # The child writes straight to the file: both streams stay in order, a
-        # partial log survives any interruption, and a daemon the command leaves
-        # behind can't hang us the way it would by holding a pipe open.
-        # Nobody can see a prompt in the log, so a terminal's stdin would only hang
-        # the command. With no input it fails fast instead. Piped stdin still works.
-        stdin = subprocess.DEVNULL if os.isatty(0) else None
-        proc = subprocess.Popen(argv, stdin=stdin, stdout=log_file, stderr=subprocess.STDOUT)
-        returncode = _wait(proc, log_file)
-    except FileNotFoundError:
-        log_file.write(f"sq: command not found: {argv[0]}\n".encode())
-        return 127
-    except OSError as e:
-        log_file.write(f"sq: cannot run {argv[0]}: {e}\n".encode())
-        return 126
+        try:
+            if raw:
+                # Prompts are visible here, so stdin stays connected.
+                proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            else:
+                # The child writes straight to the file: both streams stay in order, a
+                # partial log survives any interruption, and a daemon the command leaves
+                # behind can't hang us the way it would by holding a pipe open.
+                # Nobody can see a prompt in the log, so a terminal's stdin would only hang
+                # the command. With no input it fails fast instead. Piped stdin still works.
+                stdin = subprocess.DEVNULL if os.isatty(0) else None
+                proc = subprocess.Popen(argv, stdin=stdin, stdout=log_file, stderr=subprocess.STDOUT)
+        except FileNotFoundError:
+            return could_not_start(127, f"sq: command not found: {argv[0]}")
+        except OSError as e:
+            return could_not_start(126, f"sq: cannot run {argv[0]}: {e}")
+        returncode = _tee(proc, log_file) if raw else _wait(proc, log_file)
     finally:
         for s, handler in previous.items():
             signal.signal(s, handler)

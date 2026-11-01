@@ -13,7 +13,9 @@ from unittest import mock
 from squeeze import runner
 
 PROJECT = Path(__file__).resolve().parent.parent
-ENV = {**os.environ, "PYTHONPATH": str(PROJECT)}
+# A throwaway home keeps test runs out of the real ~/.squeeze/history.jsonl.
+_HOME = tempfile.TemporaryDirectory()
+ENV = {**os.environ, "PYTHONPATH": str(PROJECT), "HOME": _HOME.name}
 SQ = [sys.executable, "-m", "squeeze.cli"]
 
 
@@ -163,6 +165,11 @@ class SqTest(unittest.TestCase):
                 code, log = self.run_in_terminal(py(self.COUNTS_SIGINTS), piped_stdin=piped_stdin)
                 self.assertEqual(code, 7)
                 self.assertEqual(log.count("sigint"), 1)
+
+    def test_ctrl_c_in_raw_mode_reaches_the_child_once(self):
+        code, log = self.run_in_terminal(["--raw", *py(self.COUNTS_SIGINTS)])
+        self.assertEqual(code, 7)
+        self.assertEqual(log.count("sigint"), 1)
 
     def test_a_prompt_at_a_terminal_fails_instead_of_hanging(self):
         code, log = self.run_in_terminal(py("input('Continue? ')"), ctrl_c=False)

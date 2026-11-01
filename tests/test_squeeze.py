@@ -13,7 +13,9 @@ from squeeze.clean import clean, collapse_runs, render_run
 from squeeze.squeezers import generic
 
 PROJECT = Path(__file__).resolve().parent.parent
-ENV = {**os.environ, "PYTHONPATH": str(PROJECT)}
+# A throwaway home keeps test runs out of the real ~/.squeeze/history.jsonl.
+_HOME = tempfile.TemporaryDirectory()
+ENV = {**os.environ, "PYTHONPATH": str(PROJECT), "HOME": _HOME.name}
 
 
 def collapse(*lines):
@@ -45,6 +47,11 @@ class CollapseTest(unittest.TestCase):
 
     def test_identical_errors_do_collapse(self):
         self.assertEqual(collapse("error: bad", "error: bad"), ["(× 2) error: bad"])
+
+    def test_lines_of_only_numbers_are_data_not_repeats(self):
+        self.assertEqual(collapse("17", "27", "37"), ["17", "27", "37"])
+        self.assertEqual(collapse("1.5, 2", "3.5, 4"), ["1.5, 2", "3.5, 4"])
+        self.assertEqual(collapse("7", "7"), ["(× 2) 7"])
 
     def test_only_consecutive_lines_collapse(self):
         self.assertEqual(collapse("a", "b", "a"), ["a", "b", "a"])
@@ -135,7 +142,7 @@ class FallbackTest(unittest.TestCase):
 
     def result_with(self, *fakes):
         with mock.patch.object(squeezers, "SQUEEZERS", list(fakes)):
-            return squeezers.squeeze(["tool"], self.RAW, 1)
+            return squeezers.squeeze(["tool"], self.RAW, 1)[0]
 
     def test_crashing_squeezer_falls_back_to_generic(self):
         self.assertIn("the important thing", self.result_with(Crashes))
@@ -269,7 +276,8 @@ class EndToEndTest(unittest.TestCase):
         os.chdir(self.dir)
         stdout = io.TextIOWrapper(io.BytesIO())
         with mock.patch.object(squeezers, "squeeze", side_effect=RuntimeError("bug")), \
-                mock.patch.object(sys, "stdout", stdout), mock.patch.object(sys, "stderr", io.StringIO()):
+                mock.patch.object(sys, "stdout", stdout), mock.patch.object(sys, "stderr", io.StringIO()), \
+                mock.patch.dict(os.environ, {"HOME": _HOME.name}):
             code = cli.main(["sh", "-c", "echo the output; exit 9"])
         self.assertEqual(code, 9)
         self.assertEqual(stdout.buffer.getvalue(), b"the output\n")

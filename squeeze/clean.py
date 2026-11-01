@@ -29,8 +29,11 @@ def clean(raw):
 def _repeat_key(line):
     if not line.strip():
         return ""
-    # Two errors differing only by a number can be different failures (file.py:10 vs file.py:20).
-    return line if ERROR_RE.search(line) else _NUMBER_RE.sub("#", line)
+    # Two errors differing only by a number can be different failures (file.py:10 vs file.py:20),
+    # and in a line with no words the numbers are the data.
+    if ERROR_RE.search(line) or not re.search(r"[^\W\d]", line):
+        return line
+    return _NUMBER_RE.sub("#", line)
 
 
 def collapse_runs(lines):

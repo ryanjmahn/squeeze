@@ -42,7 +42,7 @@ def load(name):
 
 def run(name, exit_code=None):
     """The full path a real run takes, including every fallback."""
-    return squeezers.squeeze(["pytest"], load(name), EXIT_CODES[name] if exit_code is None else exit_code)
+    return squeezers.squeeze(["pytest"], load(name), EXIT_CODES[name] if exit_code is None else exit_code)[0]
 
 
 def direct(name):
@@ -262,19 +262,19 @@ class NeverHideAFailureTest(unittest.TestCase):
         output = "\n".join(line for line in lines if not line.startswith("FAILED "))
         with self.assertRaises(ValueError):
             pytest.squeeze(output, 1)
-        self.assertIn("test_after_the_fake_section", squeezers.squeeze(["pytest"], output, 1))
+        self.assertIn("test_after_the_fake_section", squeezers.squeeze(["pytest"], output, 1)[0])
 
     def test_a_truncated_run_goes_to_generic(self):
         output = squeezers.clean(load("pytest_failures")).rsplit("\n", 1)[0]
         with self.assertRaises(ValueError):
             pytest.squeeze(output, 1)
-        result = squeezers.squeeze(["pytest"], output, 1)
+        result = squeezers.squeeze(["pytest"], output, 1)[0]
         self.assertIn("test_refresh_token", result)
         self.assertEqual(generic.squeeze(output, 1), result)
 
     def test_failures_show_even_if_the_exit_code_says_success(self):
         # A wrapper script can swallow the exit code: `pytest; exit 0`.
-        result = squeezers.squeeze(["sh"], load("pytest_failures"), 0)
+        result = squeezers.squeeze(["sh"], load("pytest_failures"), 0)[0]
         self.assertNotIn("✓", result)
         self.assertIn("✗ tests/test_auth.py::test_refresh_token", result)
 

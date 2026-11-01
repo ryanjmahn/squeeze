@@ -1,4 +1,5 @@
 """Find where logs live, create them, read them back, keep them out of git."""
+import os
 import re
 import time
 from itertools import count
@@ -7,6 +8,7 @@ from pathlib import Path
 from .clean import ERROR_RE
 from .stats import measure
 
+DEFAULT_KEEP_LOGS = 50
 MAX_WHOLE_BYTES = 64 * 1024 * 1024
 HEAD_BYTES = 1024 * 1024
 TAIL_BYTES = 8 * 1024 * 1024
@@ -34,11 +36,15 @@ def ensure_gitignored(root):
     return True
 
 
-def open_log(root, command):
-    """Create a new log file for command. Returns (path, open binary file)."""
+def safe_name(command):
+    """A command's name without its directory, safe to use in a filename."""
+    return re.sub(r"[^\w.-]", "_", Path(command).name)[:50]
+
+
+def open_log(root, name):
+    """Create a new log file for a command. Returns (path, open binary file)."""
     log_dir = root / ".squeeze" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
-    name = re.sub(r"[^\w.-]", "_", Path(command).name)[:50]
     stem = f"{time.strftime('%Y-%m-%d_%H%M%S')}_{name}"
     # Mode "x" refuses to overwrite, so parallel runs in the same second can't clobber a log.
     for n in count(1):
@@ -47,6 +53,27 @@ def open_log(root, command):
             return path, path.open("xb")
         except FileExistsError:
             pass
+
+
+def _modified_time(path):
+    try:
+        return path.stat().st_mtime_ns
+    except OSError:
+        return 0  # a parallel run just removed it
+
+
+def keep_count():
+    """How many logs to keep: SQUEEZE_KEEP_LOGS, or the default if that isn't a positive number."""
+    value = os.environ.get("SQUEEZE_KEEP_LOGS", "")
+    return int(value) if value.isdecimal() and int(value) > 0 else DEFAULT_KEEP_LOGS
+
+
+def rotate(current):
+    """Delete the oldest logs beside current. Current is never deleted: its path was just printed."""
+    newest_first = sorted(current.parent.glob("*.log"), key=_modified_time, reverse=True)
+    for old in newest_first[keep_count():]:
+        if old != current:
+            old.unlink(missing_ok=True)
 
 
 def read_for_squeezing(path):
